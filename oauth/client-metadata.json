@@ -1,0 +1,14 @@
+{
+  "client_id": "https://nubecita.app/oauth/client-metadata.json",
+  "application_type": "native",
+  "client_name": "Nubecita",
+  "client_uri": "https://nubecita.app",
+  "tos_uri": "https://nubecita.app",
+  "policy_uri": "https://nubecita.app/privacy.html",
+  "dpop_bound_access_tokens": true,
+  "grant_types": ["authorization_code", "refresh_token"],
+  "redirect_uris": ["app.nubecita:/oauth-redirect"],
+  "response_types": ["code"],
+  "scope": "atproto transition:generic transition:chat.bsky",
+  "token_endpoint_auth_method": "none"
+}

@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy Policy — Nubecita</title>
+  <meta name="description" content="Privacy policy for Nubecita, a native Android Bluesky client." />
+  <meta name="theme-color" content="#0A7AFF" />
+  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="colors_and_type.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .legal-page {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 96px 24px 96px;
+    }
+    .legal-page header {
+      margin-bottom: 48px;
+    }
+    .legal-page h1 {
+      font-family: "Fraunces", serif;
+      font-weight: 600;
+      font-size: clamp(40px, 6vw, 64px);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin: 0 0 12px;
+    }
+    .legal-page .updated {
+      color: var(--md-sys-color-on-surface-variant, #44474e);
+      font-size: 15px;
+    }
+    .legal-page h2 {
+      font-family: "Fraunces", serif;
+      font-weight: 600;
+      font-size: 26px;
+      line-height: 1.2;
+      margin: 48px 0 12px;
+    }
+    .legal-page p,
+    .legal-page li {
+      font-size: 17px;
+      line-height: 1.65;
+      color: var(--md-sys-color-on-surface, #1a1c1e);
+    }
+    .legal-page ul {
+      padding-left: 22px;
+    }
+    .legal-page li + li {
+      margin-top: 8px;
+    }
+    .legal-page a {
+      color: var(--sky-50, #0A7AFF);
+      text-decoration: underline;
+    }
+    .legal-page .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 15px;
+      margin-bottom: 24px;
+    }
+  </style>
+</head>
+<body>
+  <main class="legal-page">
+    <a href="/" class="back">← Back to nubecita.app</a>
+    <header>
+      <h1>Privacy Policy</h1>
+      <p class="updated">Last updated: May 15, 2026</p>
+    </header>
+
+    <p>
+      Nubecita is a native Android client for the Bluesky social network, built on the
+      <a href="https://atproto.com" target="_blank" rel="noopener">AT Protocol</a>.
+      We designed Nubecita to be a quiet, calm reading experience — and that extends to how
+      it handles your data. This policy explains what Nubecita does and does not collect.
+    </p>
+
+    <h2>The short version</h2>
+    <ul>
+      <li>Nubecita does <strong>not</strong> operate a server that stores your personal data.</li>
+      <li>Nubecita signs you into Bluesky using AT Protocol OAuth. Your credentials are entered
+        on Bluesky's own login screen — Nubecita never sees your password.</li>
+      <li>Authentication tokens are stored encrypted on your device only.</li>
+      <li>Posts, follows, and any account activity live on your Bluesky account at your Personal
+        Data Server (PDS, e.g. <code>bsky.social</code>), not on Nubecita's servers.</li>
+      <li>Nubecita does not contain advertising, third-party trackers, or analytics SDKs.</li>
+    </ul>
+
+    <h2>Information Nubecita handles</h2>
+    <p>
+      To function as a Bluesky client, the app holds the following on your device:
+    </p>
+    <ul>
+      <li><strong>OAuth tokens</strong> — short-lived access and refresh tokens issued by your
+        PDS, stored in Android's encrypted credential storage and bound to your device via
+        DPoP (Demonstration of Proof-of-Possession).</li>
+      <li><strong>Cached content</strong> — posts, profiles, images, and videos you have viewed
+        recently, stored locally so the app can render quickly and work briefly offline. You can
+        clear this at any time from Android Settings → Apps → Nubecita → Storage.</li>
+      <li><strong>App preferences</strong> — your chosen theme, feed selections, and similar
+        settings, stored locally on your device.</li>
+    </ul>
+
+    <h2>Information sent to third parties</h2>
+    <p>
+      Nubecita communicates directly with two categories of services on your behalf:
+    </p>
+    <ul>
+      <li><strong>Your Personal Data Server</strong> (typically Bluesky's <code>bsky.social</code>).
+        All posting, reading, following, messaging, and notification activity goes through your PDS.
+        Their handling of your data is governed by
+        <a href="https://bsky.social/about/support/privacy-policy" target="_blank" rel="noopener">Bluesky's Privacy Policy</a>.</li>
+      <li><strong>Media hosts</strong> referenced in posts you view (image and video CDNs, link
+        previews). The host of any embedded content will see your IP address when your device
+        fetches it, the same way a web browser does.</li>
+    </ul>
+    <p>
+      Nubecita does not send your data to any analytics, advertising, or crash-reporting service
+      operated by us or any third party.
+    </p>
+
+    <h2>Permissions Nubecita requests</h2>
+    <ul>
+      <li><strong>Internet access</strong> — required to talk to Bluesky.</li>
+      <li><strong>Photos / media access</strong> — only when you choose to attach an image or
+        video to a post. Selected media is uploaded directly to your PDS.</li>
+      <li><strong>Notifications</strong> — only if you opt in. Notification delivery uses standard
+        Android system facilities and the events you choose to subscribe to on your PDS.</li>
+    </ul>
+
+    <h2>Children's privacy</h2>
+    <p>
+      Nubecita is not directed to children under 13. Bluesky's terms set the minimum age for an
+      account; please consult Bluesky's policies for details.
+    </p>
+
+    <h2>Your choices</h2>
+    <ul>
+      <li>Sign out at any time from inside the app. Signing out revokes the locally stored OAuth
+        tokens.</li>
+      <li>Clear the app's local data from Android Settings → Apps → Nubecita → Storage at any time.</li>
+      <li>Uninstall the app to remove all locally stored data.</li>
+      <li>To delete your Bluesky account itself, use the controls provided by your PDS (e.g. on
+        bsky.social).</li>
+    </ul>
+
+    <h2>Open source</h2>
+    <p>
+      Nubecita is open source. You can review exactly what the app does at
+      <a href="https://github.com/kikin81/nubecita" target="_blank" rel="noopener">github.com/kikin81/nubecita</a>.
+    </p>
+
+    <h2>Changes to this policy</h2>
+    <p>
+      If this policy changes in a material way, the updated date at the top of this page will
+      change and the revised policy will be posted at this URL before the change takes effect.
+    </p>
+
+    <h2>Contact</h2>
+    <p>
+      Questions about this policy can be sent to
+      <a href="mailto:privacy@nubecita.app">privacy@nubecita.app</a>
+      or filed as an issue on the
+      <a href="https://github.com/kikin81/nubecita/issues" target="_blank" rel="noopener">GitHub repository</a>.
+    </p>
+  </main>
+</body>
+</html>

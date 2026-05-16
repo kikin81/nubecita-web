@@ -1,0 +1,1032 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Nubecita — A Bluesky client that feels like the sky.</title>
+  <meta name="description" content="Nubecita — a calm, native Android Bluesky client built with Material 3 Expressive.">
+  <meta name="theme-color" content="#0A7AFF">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Nubecita — A Bluesky client that feels like the sky.">
+  <meta property="og:description" content="Nubecita — a calm, native Android Bluesky client built with Material 3 Expressive.">
+  <meta property="og:image" content="/assets/logo.svg">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://nubecita.app">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Nubecita — A Bluesky client that feels like the sky.">
+  <meta name="twitter:description" content="Nubecita — a calm, native Android Bluesky client built with Material 3 Expressive.">
+  <meta name="twitter:image" content="/assets/logo.svg">
+
+  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link rel="stylesheet" href="colors_and_type.css">
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    /* Local keyframes ported from phone-mockups.jsx */
+    @keyframes pmCaret { 50% { opacity: 0; } }
+    @keyframes pmFloat { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
+    @keyframes pmDrift { 0% { transform: translateX(-20px) } 100% { transform: translateX(calc(100vw + 20px)) } }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- ── Nav ───────────────────────────────────────────── -->
+    <nav class="nav" id="nav">
+      <div class="nav__inner">
+        <a href="#" class="nav__brand">
+          <svg class="nav__logomark" width="32" height="32" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Nubecita cloud logo">
+            <g transform="translate(4, 16)">
+              <circle cx="18" cy="26" r="14" fill="currentColor"/>
+              <circle cx="34" cy="20" r="18" fill="currentColor"/>
+              <circle cx="52" cy="26" r="14" fill="currentColor"/>
+              <rect x="10" y="30" width="48" height="14" rx="7" fill="currentColor"/>
+              <path d="M 24 22 q 3 -3 6 0" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+              <path d="M 38 22 q 3 -3 6 0" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+            </g>
+          </svg>
+          <span class="nav__wordmark">nubecita</span>
+        </a>
+        <div class="nav__links">
+          <a href="#features">Features</a>
+          <a href="#adaptive">Adaptive</a>
+          <a href="#faq">FAQ</a>
+          <a href="https://github.com/kikin81/nubecita" rel="noopener">GitHub</a>
+        </div>
+        <div class="nav__cta">
+          <button class="nav__theme nav__theme--hero" id="themeToggle" aria-label="Toggle theme" type="button">
+            <span class="material-symbols-rounded" style="font-size:20px" id="themeIcon">dark_mode</span>
+          </button>
+          <!-- TODO: Play Store URL once published -->
+          <a href="#download" class="btn btn--filled btn--on-hero" id="navCta">
+            <span class="material-symbols-rounded" style="font-size:18px">download</span>
+            Get the app
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+
+      <!-- ── Hero ──────────────────────────────────────────── -->
+      <header class="hero">
+        <div class="hero__clouds" aria-hidden="true">
+          <div class="hero__cloud" style="top:12%; left:6%; width:110px; opacity:0.18; animation: pmFloat 6s ease-in-out 0s infinite;">
+            <svg width="110" height="110" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+              <g transform="translate(4, 16)">
+                <circle cx="18" cy="26" r="14" fill="#fff"/>
+                <circle cx="34" cy="20" r="18" fill="#fff"/>
+                <circle cx="52" cy="26" r="14" fill="#fff"/>
+                <rect x="10" y="30" width="48" height="14" rx="7" fill="#fff"/>
+              </g>
+            </svg>
+          </div>
+          <div class="hero__cloud" style="top:28%; left:52%; width:70px; opacity:0.14; animation: pmFloat 6s ease-in-out 1.2s infinite;">
+            <svg width="70" height="70" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+              <g transform="translate(4, 16)">
+                <circle cx="18" cy="26" r="14" fill="#fff"/>
+                <circle cx="34" cy="20" r="18" fill="#fff"/>
+                <circle cx="52" cy="26" r="14" fill="#fff"/>
+                <rect x="10" y="30" width="48" height="14" rx="7" fill="#fff"/>
+              </g>
+            </svg>
+          </div>
+          <div class="hero__cloud" style="top:60%; left:8%; width:90px; opacity:0.16; animation: pmFloat 6s ease-in-out 0.6s infinite;">
+            <svg width="90" height="90" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+              <g transform="translate(4, 16)">
+                <circle cx="18" cy="26" r="14" fill="#fff"/>
+                <circle cx="34" cy="20" r="18" fill="#fff"/>
+                <circle cx="52" cy="26" r="14" fill="#fff"/>
+                <rect x="10" y="30" width="48" height="14" rx="7" fill="#fff"/>
+              </g>
+            </svg>
+          </div>
+          <div class="hero__cloud" style="top:74%; left:46%; width:130px; opacity:0.12; animation: pmFloat 6s ease-in-out 1.8s infinite;">
+            <svg width="130" height="130" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+              <g transform="translate(4, 16)">
+                <circle cx="18" cy="26" r="14" fill="#fff"/>
+                <circle cx="34" cy="20" r="18" fill="#fff"/>
+                <circle cx="52" cy="26" r="14" fill="#fff"/>
+                <rect x="10" y="30" width="48" height="14" rx="7" fill="#fff"/>
+              </g>
+            </svg>
+          </div>
+          <div class="hero__cloud" style="top:18%; left:78%; width:60px; opacity:0.20; animation: pmFloat 6s ease-in-out 0.3s infinite;">
+            <svg width="60" height="60" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+              <g transform="translate(4, 16)">
+                <circle cx="18" cy="26" r="14" fill="#fff"/>
+                <circle cx="34" cy="20" r="18" fill="#fff"/>
+                <circle cx="52" cy="26" r="14" fill="#fff"/>
+                <rect x="10" y="30" width="48" height="14" rx="7" fill="#fff"/>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <div class="hero__inner">
+          <div class="hero__copy">
+            <div class="hero__eyebrow">
+              <span class="material-symbols-rounded" style="font-size:16px">android</span>
+              Native Android · Material 3 Expressive
+            </div>
+            <h1 class="hero__title">
+              <span>A Bluesky</span>
+              <span>client that feels</span>
+              <span class="hero__title-italic">like the sky.</span>
+            </h1>
+            <p class="hero__sub">
+              Nubecita is a fast, expressive Bluesky client built from scratch for Android — phones, tablets, and foldables. Bigger type, springy motion, calmer feed.
+            </p>
+            <div class="hero__cta">
+              <!-- TODO: Play Store URL once published -->
+              <a href="#" class="play-badge">
+                <span class="material-symbols-rounded play-badge__icon">play_arrow</span>
+                <span class="play-badge__text">
+                  <span class="play-badge__sup">Get it on</span>
+                  <span class="play-badge__big">Google Play</span>
+                </span>
+              </a>
+              <a href="#features" class="hero__secondary">
+                See what's inside
+                <span class="material-symbols-rounded" style="font-size:18px">arrow_forward</span>
+              </a>
+            </div>
+            <div class="hero__meta">
+              <span><b>4.8</b> ★ on Play Store</span>
+              <span class="hero__meta-dot">·</span>
+              <span>Free, no ads, open source</span>
+            </div>
+          </div>
+
+          <div class="hero__phones">
+            <div class="hero__phone hero__phone--back">
+              <!-- PhoneShell width=260 height=550 tilt=-6 with NotificationsScreen -->
+              <div class="phone-shell" style="width:260px; height:550px; border-radius:44px; background:#0A0E16; padding:8px; position:relative; box-shadow:0 30px 80px -20px rgba(0,13,31,0.45), 0 0 0 1.5px rgba(255,255,255,0.08), inset 0 0 0 1px rgba(255,255,255,0.04); transform:rotate(-6deg);">
+                <div style="width:100%; height:100%; border-radius:36px; overflow:hidden; position:relative; background:var(--surface); color:var(--fg-1);">
+                  <!-- NotificationsScreen -->
+                  <div style="display:flex; flex-direction:column; height:100%; background:var(--surface);">
+                    <div style="height:36px; padding:0 22px; display:flex; align-items:center; justify-content:space-between; font-family:var(--font-body); font-weight:600; font-size:13px; color:var(--fg-1);">
+                      <span>9:41</span>
+                      <span style="display:flex; gap:6px; align-items:center;">
+                        <span class="material-symbols-rounded" style="font-size:14px">signal_cellular_4_bar</span>
+                        <span class="material-symbols-rounded" style="font-size:14px">wifi</span>
+                        <span class="material-symbols-rounded" style="font-size:14px">battery_full</span>
+                      </span>
+                    </div>
+                    <div style="height:56px; padding:0 16px; display:flex; align-items:center;">
+                      <div style="font-family:var(--font-body); font-weight:600; font-size:20px;">Notifications</div>
+                      <div style="margin-left:auto;">
+                        <div style="width:36px; height:36px; border-radius:999px; display:flex; align-items:center; justify-content:center; color:var(--on-surface-variant);">
+                          <span class="material-symbols-rounded" style="font-size:20px">filter_list</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div style="flex:1;">
+                      <div style="padding:14px; display:grid; grid-template-columns:32px 1fr; gap:12px; border-bottom:1px solid var(--outline-variant);">
+                        <div style="width:32px; height:32px; border-radius:999px; background:var(--surface-container-high); display:flex; align-items:center; justify-content:center;">
+                          <span class="material-symbols-rounded" style="font-size:18px; color:var(--peach-60); font-variation-settings:'FILL' 1,'wght' 500">favorite</span>
+                        </div>
+                        <div>
+                          <div style="font-size:13px; line-height:18px; color:var(--fg-1);">
+                            Alice Chen and 12 others liked your post <span style="color:var(--fg-3);"> · 2h</span>
+                          </div>
+                          <div style="margin-top:4px; font-size:12px; color:var(--fg-3); line-height:17px;">The thing about building a Bluesky client...</div>
+                        </div>
+                      </div>
+                      <div style="padding:14px; display:grid; grid-template-columns:32px 1fr; gap:12px; border-bottom:1px solid var(--outline-variant);">
+                        <div style="width:32px; height:32px; border-radius:999px; background:var(--surface-container-high); display:flex; align-items:center; justify-content:center;">
+                          <span class="material-symbols-rounded" style="font-size:18px; color:var(--primary); font-variation-settings:'FILL' 1,'wght' 500">person_add</span>
+                        </div>
+                        <div>
+                          <div style="font-size:13px; line-height:18px; color:var(--fg-1);">
+                            Priya Ramanathan followed you <span style="color:var(--fg-3);"> · 3h</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div style="padding:14px; display:grid; grid-template-columns:32px 1fr; gap:12px; border-bottom:1px solid var(--outline-variant);">
+                        <div style="width:32px; height:32px; border-radius:999px; background:var(--surface-container-high); display:flex; align-items:center; justify-content:center;">
+                          <span class="material-symbols-rounded" style="font-size:18px; color:var(--success-50); font-variation-settings:'FILL' 1,'wght' 500">repeat</span>
+                        </div>
+                        <div>
+                          <div style="font-size:13px; line-height:18px; color:var(--fg-1);">
+                            Marco Díaz reposted your post <span style="color:var(--fg-3);"> · 5h</span>
+                          </div>
+                          <div style="margin-top:4px; font-size:12px; color:var(--fg-3); line-height:17px;">Tiny victory: got adaptive layouts...</div>
+                        </div>
+                      </div>
+                      <div style="padding:14px; display:grid; grid-template-columns:32px 1fr; gap:12px; border-bottom:1px solid var(--outline-variant);">
+                        <div style="width:32px; height:32px; border-radius:999px; background:var(--surface-container-high); display:flex; align-items:center; justify-content:center;">
+                          <span class="material-symbols-rounded" style="font-size:18px; color:var(--primary); font-variation-settings:'FILL' 1,'wght' 500">chat_bubble</span>
+                        </div>
+                        <div>
+                          <div style="font-size:13px; line-height:18px; color:var(--fg-1);">
+                            Devon Park replied <span style="color:var(--fg-3);"> · 7h</span>
+                          </div>
+                          <div style="margin-top:4px; font-size:12px; color:var(--fg-3); line-height:17px;">"This is exactly it. The readable-text part especially..."</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Notch -->
+                  <div style="position:absolute; top:8px; left:50%; transform:translateX(-50%); width:90px; height:22px; border-radius:999px; background:#0A0E16; z-index:30;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="hero__phone hero__phone--front">
+              <!-- PhoneShell width=300 height=620 with FeedScreen -->
+              <div class="phone-shell" style="width:300px; height:620px; border-radius:44px; background:#0A0E16; padding:8px; position:relative; box-shadow:0 30px 80px -20px rgba(0,13,31,0.45), 0 0 0 1.5px rgba(255,255,255,0.08), inset 0 0 0 1px rgba(255,255,255,0.04);">
+                <div style="width:100%; height:100%; border-radius:36px; overflow:hidden; position:relative; background:var(--surface); color:var(--fg-1);">
+                  <!-- FeedScreen content (transcribed; see partial below) -->
+                  <div style="display:flex; flex-direction:column; height:100%; background:var(--surface);">
+                    <div style="height:36px; padding:0 22px; display:flex; align-items:center; justify-content:space-between; font-family:var(--font-body); font-weight:600; font-size:13px; color:var(--fg-1);">
+                      <span>9:41</span>
+                      <span style="display:flex; gap:6px; align-items:center;">
+                        <span class="material-symbols-rounded" style="font-size:14px">signal_cellular_4_bar</span>
+                        <span class="material-symbols-rounded" style="font-size:14px">wifi</span>
+                        <span class="material-symbols-rounded" style="font-size:14px">battery_full</span>
+                      </span>
+                    </div>
+                    <div style="height:56px; padding:0 16px; display:flex; align-items:center; gap:12px;">
+                      <div style="width:30px; height:30px; display:flex; align-items:center; justify-content:center;">
+                        <svg width="26" height="20" viewBox="0 0 72 56" xmlns="http://www.w3.org/2000/svg">
+                          <g>
+                            <circle cx="22" cy="34" r="14" fill="var(--primary)"/>
+                            <circle cx="38" cy="28" r="18" fill="var(--primary)"/>
+                            <circle cx="56" cy="34" r="14" fill="var(--primary)"/>
+                            <rect x="14" y="38" width="48" height="14" rx="7" fill="var(--primary)"/>
+                            <path d="M 28 30 q 3 -3 6 0" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+                            <path d="M 42 30 q 3 -3 6 0" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+                          </g>
+                        </svg>
+                      </div>
+                      <div style="font-family:var(--font-display); font-weight:600; font-size:22px; font-variation-settings:'SOFT' 50; letter-spacing:-0.01em; color:var(--fg-1);">nubecita</div>
+                      <div style="margin-left:auto; display:flex; gap:4px;">
+                        <div style="width:36px; height:36px; border-radius:999px; display:flex; align-items:center; justify-content:center; color:var(--on-surface-variant);"><span class="material-symbols-rounded" style="font-size:20px">search</span></div>
+                        <div style="width:36px; height:36px; border-radius:999px; display:flex; align-items:center; justify-content:center; color:var(--on-surface-variant);"><span class="material-symbols-rounded" style="font-size:20px">settings</span></div>
+                      </div>
+                    </div>
+                    <div style="display:flex; padding:0 16px; gap:24px; border-bottom:1px solid var(--outline-variant);">
+                      <div style="padding:12px 0; border-bottom:3px solid var(--primary); color:var(--fg-1); font-family:var(--font-body); font-weight:600; font-size:13px;">For you</div>
+                      <div style="padding:12px 0; border-bottom:3px solid transparent; color:var(--fg-3); font-family:var(--font-body); font-weight:600; font-size:13px;">Following</div>
+                      <div style="padding:12px 0; border-bottom:3px solid transparent; color:var(--fg-3); font-family:var(--font-body); font-weight:600; font-size:13px;">Art</div>
+                      <div style="padding:12px 0; border-bottom:3px solid transparent; color:var(--fg-3); font-family:var(--font-body); font-weight:600; font-size:13px;">Tech</div>
+                    </div>
+
+                    <div style="flex:1; overflow:hidden;">
+                      <!-- Post: Alice Chen -->
+                      <div style="padding:12px 14px; display:grid; grid-template-columns:36px 1fr; gap:10px; border-bottom:1px solid var(--outline-variant);">
+                        <div style="width:36px; height:36px; border-radius:999px; flex-shrink:0; background:linear-gradient(135deg, hsl(210,70%,70%), hsl(250,60%,55%)); color:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--font-body); font-weight:600; font-size:14px;">A</div>
+                        <div style="min-width:0;">
+                          <div style="display:flex; align-items:baseline; gap:4px; font-size:12px;">
+                            <span style="font-weight:600; color:var(--fg-1); font-size:13px;">Alice Chen</span>
+                            <span style="color:var(--fg-3); font-family:var(--font-mono); font-size:11px;">@alice.nubecita</span>
+                            <span style="color:var(--fg-3); margin-left:auto; font-size:11px;">3h</span>
+                          </div>
+                          <div style="font-size:13px; line-height:19px; color:var(--fg-1); margin:3px 0 6px;">The thing about building a Bluesky client in 2026 is you realize how much of the web we gave up trying to fix. Small clients, good defaults, readable text. ☁︎</div>
+                          <div style="display:flex; gap:0; color:var(--fg-3); margin-left:-4px;">
+                            <div style="padding:4px 6px; display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--fg-2); min-width:44px;"><span class="material-symbols-rounded" style="font-size:16px">chat_bubble</span><span>12</span></div>
+                            <div style="padding:4px 6px; display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--fg-2); min-width:44px;"><span class="material-symbols-rounded" style="font-size:16px">repeat</span><span>4</span></div>
+                            <div style="padding:4px 6px; display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--peach-60); min-width:44px;"><span class="material-symbols-rounded" style="font-size:16px; font-variation-settings:'FILL' 1,'wght' 400">favorite</span><span>87</span></div>
+                            <div style="padding:4px 6px; display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--fg-2); min-width:44px;"><span class="material-symbols-rounded" style="font-size:16px">share</span></div>
+                          </div>
+                        </div>
+                      </div>
+                      <!-- Post: Marco Díaz -->
+                      <div style="padding:12px 14px; display:grid; grid-template-columns:36px 1fr; gap:10px; border-bottom:1px solid var(--outline-variant);">
+                        <div style="width:36px; height:36px; border-radius:999px; flex-shrink:0; background:linear-gradient(135deg, hsl(35,70%,70%), hsl(75,60%,55%)); color:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--font-body); font-weight:600; font-size:14px;">M</div>
+                        <div style="min-width:0;">
+                          <div style="display:flex; align-items:baseline; gap:4px; font-size:12px;">
+                            <span style="font-weight:600; color:var(--fg-1); font-size:13px;">Marco Díaz</span>
+                            <span style="color:var(--fg-3); font-family:var(--font-mono); font-size:11px;">@marco.bsky.so</span>
+                            <span style="color:var(--fg-3); margin-left:auto; font-size:11px;">4h</span>
+                          </div>
+                          <div style="font-size:13px; line-height:19px; color:var(--fg-1); margin:3px 0 6px;">Tiny victory: got adaptive layouts working on the Fold. Feed + thread + composer all open at once.</div>
+                          <div style="height:110px; border-radius:12px; margin-bottom:6px; background:linear-gradient(135deg, var(--sky-80), var(--lilac-40)); border:1px solid var(--outline-variant);"></div>
+                          <div style="display:flex; gap:0; color:var(--fg-3); margin-left:-4px;">
+                            <div style="padding:4px 6px; display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--fg-2); min-width:44px;"><span class="material-symbols-rounded" style="font-size:16px">chat_bubble</span><span>28</span></div>
+                            <div style="padding:4px 6px; display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--fg-2); min-width:44px;"><span class="material-symbols-rounded" style="font-size:16px">repeat</span><span>14</span></div>
+                            <div style="padding:4px 6px; display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--fg-2); min-width:44px;"><span class="material-symbols-rounded" style="font-size:16px">favorite</span><span>210</span></div>
+                            <div style="padding:4px 6px; display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--fg-2); min-width:44px;"><span class="material-symbols-rounded" style="font-size:16px">share</span></div>
+                          </div>
+                        </div>
+                      </div>
+                      <!-- Post: Sana Okafor -->
+                      <div style="padding:12px 14px; display:grid; grid-template-columns:36px 1fr; gap:10px; border-bottom:1px solid var(--outline-variant);">
+                        <div style="width:36px; height:36px; border-radius:999px; flex-shrink:0; background:linear-gradient(135deg, hsl(320,70%,70%), hsl(0,60%,55%)); color:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--font-body); font-weight:600; font-size:14px;">S</div>
+                        <div style="min-width:0;">
+                          <div style="display:flex; align-items:baseline; gap:4px; font-size:12px;">
+                            <span style="font-weight:600; color:var(--fg-1); font-size:13px;">Sana Okafor</span>
+                            <span style="color:var(--fg-3); font-family:var(--font-mono); font-size:11px;">@sana.nubecita</span>
+                            <span style="color:var(--fg-3); margin-left:auto; font-size:11px;">5h</span>
+                          </div>
+                          <div style="font-size:13px; line-height:19px; color:var(--fg-1); margin:3px 0 6px;">Reading recs for the plane: a novel, a book of essays, or the Bluesky custom feeds documentation? All three, obviously.</div>
+                          <div style="display:flex; gap:0; color:var(--fg-3); margin-left:-4px;">
+                            <div style="padding:4px 6px; display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--fg-2); min-width:44px;"><span class="material-symbols-rounded" style="font-size:16px">chat_bubble</span><span>6</span></div>
+                            <div style="padding:4px 6px; display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--fg-2); min-width:44px;"><span class="material-symbols-rounded" style="font-size:16px">repeat</span><span>2</span></div>
+                            <div style="padding:4px 6px; display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--fg-2); min-width:44px;"><span class="material-symbols-rounded" style="font-size:16px">favorite</span><span>47</span></div>
+                            <div style="padding:4px 6px; display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--fg-2); min-width:44px;"><span class="material-symbols-rounded" style="font-size:16px">share</span></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- FAB -->
+                    <div style="position:absolute; right:18px; bottom:92px; z-index:5;">
+                      <div style="width:56px; height:56px; border-radius:16px; background:var(--primary); color:var(--on-primary); display:flex; align-items:center; justify-content:center; box-shadow:var(--elev-3);">
+                        <span class="material-symbols-rounded" style="font-size:24px; font-variation-settings:'FILL' 0,'wght' 500">edit</span>
+                      </div>
+                    </div>
+
+                    <!-- Bottom nav -->
+                    <div style="height:76px; background:var(--surface-container); display:flex; align-items:center; padding:8px 0;">
+                      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--on-primary-container);">
+                        <div style="height:28px; width:56px; border-radius:999px; background:var(--primary-container); display:flex; align-items:center; justify-content:center;"><span class="material-symbols-rounded" style="font-size:20px; font-variation-settings:'FILL' 1,'wght' 500">home</span></div>
+                        <span style="font-size:10px; font-weight:600; font-family:var(--font-body);">Home</span>
+                      </div>
+                      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--on-surface-variant);">
+                        <div style="height:28px; width:56px; border-radius:999px; background:transparent; display:flex; align-items:center; justify-content:center;"><span class="material-symbols-rounded" style="font-size:20px; font-variation-settings:'FILL' 0,'wght' 500">search</span></div>
+                        <span style="font-size:10px; font-weight:600; font-family:var(--font-body);">Search</span>
+                      </div>
+                      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--on-surface-variant);">
+                        <div style="height:28px; width:56px; border-radius:999px; background:transparent; display:flex; align-items:center; justify-content:center;"><span class="material-symbols-rounded" style="font-size:20px; font-variation-settings:'FILL' 0,'wght' 500">mail</span></div>
+                        <span style="font-size:10px; font-weight:600; font-family:var(--font-body);">Chats</span>
+                      </div>
+                      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--on-surface-variant);">
+                        <div style="height:28px; width:56px; border-radius:999px; background:transparent; display:flex; align-items:center; justify-content:center;"><span class="material-symbols-rounded" style="font-size:20px; font-variation-settings:'FILL' 0,'wght' 500">person</span></div>
+                        <span style="font-size:10px; font-weight:600; font-family:var(--font-body);">You</span>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Notch -->
+                  <div style="position:absolute; top:8px; left:50%; transform:translateX(-50%); width:90px; height:22px; border-radius:999px; background:#0A0E16; z-index:30;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="scroll-hint" aria-hidden="true">
+          <span class="scroll-hint__line"></span>
+          <span>Scroll</span>
+        </div>
+      </header>
+
+      <!-- ── Platform strip ──────────────────────────────── -->
+      <section class="strip">
+        <div class="strip__label">Designed for</div>
+        <div class="strip__items">
+          <div class="platform-pill">
+            <span class="material-symbols-rounded" style="font-size:18px">smartphone</span>
+            <span>Phone</span>
+          </div>
+          <div class="platform-pill">
+            <span class="material-symbols-rounded" style="font-size:18px">tablet_android</span>
+            <span>Tablet</span>
+          </div>
+          <div class="platform-pill">
+            <span class="material-symbols-rounded" style="font-size:18px">devices_fold</span>
+            <span>Foldable</span>
+          </div>
+          <div class="platform-pill platform-pill--muted">
+            <span class="material-symbols-rounded" style="font-size:18px">watch</span>
+            <span>Wear OS</span>
+            <span class="platform-pill__soon">soon</span>
+          </div>
+        </div>
+        <div class="strip__label strip__label--right">Built on Material 3 Expressive</div>
+      </section>
+
+      <!-- ── Features ────────────────────────────────────── -->
+      <section id="features" class="features">
+        <div class="section-header">
+          <div class="section-header__eyebrow">Features</div>
+          <h2 class="section-header__title">Three things to love.</h2>
+          <p class="section-header__sub">Everything in Nubecita is built around three convictions: feeds should be readable, posting should be fast, notifications should be optional.</p>
+        </div>
+
+        <div class="features__grid">
+
+          <!-- Feature 01 — Reading (FeedScreen) -->
+          <article class="feature">
+            <div class="feature__visual feature__visual--feed" style="--feature-accent: var(--primary);">
+              <div class="feature__phone">
+                <div class="phone-shell" style="width:240px; height:500px; border-radius:44px; background:#0A0E16; padding:8px; position:relative; box-shadow:0 30px 80px -20px rgba(0,13,31,0.45), 0 0 0 1.5px rgba(255,255,255,0.08), inset 0 0 0 1px rgba(255,255,255,0.04);">
+                  <div style="width:100%; height:100%; border-radius:36px; overflow:hidden; position:relative; background:var(--surface); color:var(--fg-1);">
+                    <div style="display:flex; flex-direction:column; height:100%; background:var(--surface);">
+                      <div style="height:36px; padding:0 22px; display:flex; align-items:center; justify-content:space-between; font-family:var(--font-body); font-weight:600; font-size:13px; color:var(--fg-1);">
+                        <span>9:41</span>
+                        <span style="display:flex; gap:6px; align-items:center;">
+                          <span class="material-symbols-rounded" style="font-size:14px">signal_cellular_4_bar</span>
+                          <span class="material-symbols-rounded" style="font-size:14px">wifi</span>
+                          <span class="material-symbols-rounded" style="font-size:14px">battery_full</span>
+                        </span>
+                      </div>
+                      <div style="height:56px; padding:0 16px; display:flex; align-items:center; gap:12px;">
+                        <div style="width:30px; height:30px; display:flex; align-items:center; justify-content:center;">
+                          <svg width="26" height="20" viewBox="0 0 72 56" xmlns="http://www.w3.org/2000/svg">
+                            <g>
+                              <circle cx="22" cy="34" r="14" fill="var(--primary)"/>
+                              <circle cx="38" cy="28" r="18" fill="var(--primary)"/>
+                              <circle cx="56" cy="34" r="14" fill="var(--primary)"/>
+                              <rect x="14" y="38" width="48" height="14" rx="7" fill="var(--primary)"/>
+                              <path d="M 28 30 q 3 -3 6 0" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+                              <path d="M 42 30 q 3 -3 6 0" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+                            </g>
+                          </svg>
+                        </div>
+                        <div style="font-family:var(--font-display); font-weight:600; font-size:22px; font-variation-settings:'SOFT' 50; letter-spacing:-0.01em; color:var(--fg-1);">nubecita</div>
+                        <div style="margin-left:auto; display:flex; gap:4px;">
+                          <div style="width:36px; height:36px; border-radius:999px; display:flex; align-items:center; justify-content:center; color:var(--on-surface-variant);"><span class="material-symbols-rounded" style="font-size:20px">search</span></div>
+                          <div style="width:36px; height:36px; border-radius:999px; display:flex; align-items:center; justify-content:center; color:var(--on-surface-variant);"><span class="material-symbols-rounded" style="font-size:20px">settings</span></div>
+                        </div>
+                      </div>
+                      <div style="display:flex; padding:0 16px; gap:24px; border-bottom:1px solid var(--outline-variant);">
+                        <div style="padding:12px 0; border-bottom:3px solid var(--primary); color:var(--fg-1); font-family:var(--font-body); font-weight:600; font-size:13px;">For you</div>
+                        <div style="padding:12px 0; border-bottom:3px solid transparent; color:var(--fg-3); font-family:var(--font-body); font-weight:600; font-size:13px;">Following</div>
+                        <div style="padding:12px 0; border-bottom:3px solid transparent; color:var(--fg-3); font-family:var(--font-body); font-weight:600; font-size:13px;">Art</div>
+                      </div>
+                      <div style="flex:1; overflow:hidden;">
+                        <div style="padding:12px 14px; display:grid; grid-template-columns:36px 1fr; gap:10px; border-bottom:1px solid var(--outline-variant);">
+                          <div style="width:36px; height:36px; border-radius:999px; background:linear-gradient(135deg, hsl(210,70%,70%), hsl(250,60%,55%));"></div>
+                          <div style="min-width:0;">
+                            <div style="display:flex; align-items:baseline; gap:4px; font-size:12px;">
+                              <span style="font-weight:600; color:var(--fg-1); font-size:13px;">Alice Chen</span>
+                              <span style="color:var(--fg-3); margin-left:auto; font-size:11px;">3h</span>
+                            </div>
+                            <div style="font-size:13px; line-height:19px; color:var(--fg-1); margin:3px 0 6px;">The thing about building a Bluesky client in 2026 is you realize how much of the web we gave up. ☁︎</div>
+                          </div>
+                        </div>
+                        <div style="padding:12px 14px; display:grid; grid-template-columns:36px 1fr; gap:10px; border-bottom:1px solid var(--outline-variant);">
+                          <div style="width:36px; height:36px; border-radius:999px; background:linear-gradient(135deg, hsl(35,70%,70%), hsl(75,60%,55%));"></div>
+                          <div style="min-width:0;">
+                            <div style="display:flex; align-items:baseline; gap:4px; font-size:12px;">
+                              <span style="font-weight:600; color:var(--fg-1); font-size:13px;">Marco Díaz</span>
+                              <span style="color:var(--fg-3); margin-left:auto; font-size:11px;">4h</span>
+                            </div>
+                            <div style="font-size:13px; line-height:19px; color:var(--fg-1); margin:3px 0 6px;">Tiny victory: got adaptive layouts working on the Fold.</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div style="position:absolute; top:8px; left:50%; transform:translateX(-50%); width:90px; height:22px; border-radius:999px; background:#0A0E16; z-index:30;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="feature__body">
+              <div class="feature__tag" style="color: var(--primary);">01 — Reading</div>
+              <h3 class="feature__title">A feed that wants to be read.</h3>
+              <p class="feature__copy">17 px body type with generous line height. Roboto Flex tuned for long sessions. No infinite blue links. No noisy chrome.</p>
+            </div>
+          </article>
+
+          <!-- Feature 02 — Posting (ComposerScreen) -->
+          <article class="feature">
+            <div class="feature__visual feature__visual--composer" style="--feature-accent: var(--secondary);">
+              <div class="feature__phone">
+                <div class="phone-shell" style="width:240px; height:500px; border-radius:44px; background:#0A0E16; padding:8px; position:relative; box-shadow:0 30px 80px -20px rgba(0,13,31,0.45), 0 0 0 1.5px rgba(255,255,255,0.08), inset 0 0 0 1px rgba(255,255,255,0.04);">
+                  <div style="width:100%; height:100%; border-radius:36px; overflow:hidden; position:relative; background:var(--surface); color:var(--fg-1);">
+                    <div style="display:flex; flex-direction:column; height:100%; background:var(--surface);">
+                      <div style="height:36px; padding:0 22px; display:flex; align-items:center; justify-content:space-between; font-family:var(--font-body); font-weight:600; font-size:13px; color:var(--fg-1);">
+                        <span>9:41</span>
+                        <span style="display:flex; gap:6px; align-items:center;">
+                          <span class="material-symbols-rounded" style="font-size:14px">signal_cellular_4_bar</span>
+                          <span class="material-symbols-rounded" style="font-size:14px">wifi</span>
+                          <span class="material-symbols-rounded" style="font-size:14px">battery_full</span>
+                        </span>
+                      </div>
+                      <div style="height:56px; padding:0 8px; display:flex; align-items:center; gap:8px;">
+                        <div style="width:36px; height:36px; border-radius:999px; display:flex; align-items:center; justify-content:center; color:var(--on-surface-variant);"><span class="material-symbols-rounded" style="font-size:20px">close</span></div>
+                        <div style="flex:1;"></div>
+                        <div style="height:36px; padding:0 18px; border-radius:999px; background:var(--primary); color:var(--on-primary); display:flex; align-items:center; font-family:var(--font-body); font-weight:600; font-size:13px;">Post</div>
+                      </div>
+                      <div style="padding:14px; display:grid; grid-template-columns:40px 1fr; gap:12px; flex:1;">
+                        <div style="width:40px; height:40px; border-radius:999px; background:linear-gradient(135deg, hsl(195,70%,70%), hsl(235,60%,55%)); color:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--font-body); font-weight:600; font-size:16px;">Y</div>
+                        <div style="min-width:0; display:flex; flex-direction:column;">
+                          <div style="font-size:14px; line-height:22px; color:var(--fg-1); flex:1; padding-top:6px;">
+                            quiet up here. just the sky and a few feeds I actually want to read.
+                            <span style="display:inline-block; width:2px; height:18px; margin-left:1px; background:var(--primary); vertical-align:middle; animation: pmCaret 1s steps(2) infinite;"></span>
+                          </div>
+                          <div style="display:flex; gap:6px; padding-top:12px;">
+                            <span class="material-symbols-rounded" style="font-size:22px; color:var(--primary); padding:8px;">image</span>
+                            <span class="material-symbols-rounded" style="font-size:22px; color:var(--primary); padding:8px;">gif_box</span>
+                            <span class="material-symbols-rounded" style="font-size:22px; color:var(--primary); padding:8px;">alternate_email</span>
+                            <span class="material-symbols-rounded" style="font-size:22px; color:var(--primary); padding:8px;">tag</span>
+                            <div style="margin-left:auto; align-self:center; font-family:var(--font-mono); font-size:12px; color:var(--fg-3); padding-right:6px;">233</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div style="position:absolute; top:8px; left:50%; transform:translateX(-50%); width:90px; height:22px; border-radius:999px; background:#0A0E16; z-index:30;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="feature__body">
+              <div class="feature__tag" style="color: var(--secondary);">02 — Posting</div>
+              <h3 class="feature__title">Composer that gets out of your way.</h3>
+              <p class="feature__copy">Spring-driven sheets, tactile pill buttons, smart drafts. The whole point of M3 Expressive — minus the corporate vibe.</p>
+            </div>
+          </article>
+
+          <!-- Feature 03 — Quiet (NotificationsScreen) -->
+          <article class="feature">
+            <div class="feature__visual feature__visual--quiet" style="--feature-accent: var(--tertiary);">
+              <div class="feature__phone">
+                <div class="phone-shell" style="width:240px; height:500px; border-radius:44px; background:#0A0E16; padding:8px; position:relative; box-shadow:0 30px 80px -20px rgba(0,13,31,0.45), 0 0 0 1.5px rgba(255,255,255,0.08), inset 0 0 0 1px rgba(255,255,255,0.04);">
+                  <div style="width:100%; height:100%; border-radius:36px; overflow:hidden; position:relative; background:var(--surface); color:var(--fg-1);">
+                    <div style="display:flex; flex-direction:column; height:100%; background:var(--surface);">
+                      <div style="height:36px; padding:0 22px; display:flex; align-items:center; justify-content:space-between; font-family:var(--font-body); font-weight:600; font-size:13px; color:var(--fg-1);">
+                        <span>9:41</span>
+                        <span style="display:flex; gap:6px; align-items:center;">
+                          <span class="material-symbols-rounded" style="font-size:14px">signal_cellular_4_bar</span>
+                          <span class="material-symbols-rounded" style="font-size:14px">wifi</span>
+                          <span class="material-symbols-rounded" style="font-size:14px">battery_full</span>
+                        </span>
+                      </div>
+                      <div style="height:56px; padding:0 16px; display:flex; align-items:center;">
+                        <div style="font-family:var(--font-body); font-weight:600; font-size:20px;">Notifications</div>
+                      </div>
+                      <div style="flex:1;">
+                        <div style="padding:14px; display:grid; grid-template-columns:32px 1fr; gap:12px; border-bottom:1px solid var(--outline-variant);">
+                          <div style="width:32px; height:32px; border-radius:999px; background:var(--surface-container-high); display:flex; align-items:center; justify-content:center;">
+                            <span class="material-symbols-rounded" style="font-size:18px; color:var(--peach-60); font-variation-settings:'FILL' 1,'wght' 500">favorite</span>
+                          </div>
+                          <div>
+                            <div style="font-size:13px; line-height:18px; color:var(--fg-1);">Alice Chen and 12 others liked your post <span style="color:var(--fg-3);"> · 2h</span></div>
+                          </div>
+                        </div>
+                        <div style="padding:14px; display:grid; grid-template-columns:32px 1fr; gap:12px; border-bottom:1px solid var(--outline-variant);">
+                          <div style="width:32px; height:32px; border-radius:999px; background:var(--surface-container-high); display:flex; align-items:center; justify-content:center;">
+                            <span class="material-symbols-rounded" style="font-size:18px; color:var(--primary); font-variation-settings:'FILL' 1,'wght' 500">person_add</span>
+                          </div>
+                          <div>
+                            <div style="font-size:13px; line-height:18px; color:var(--fg-1);">Priya Ramanathan followed you <span style="color:var(--fg-3);"> · 3h</span></div>
+                          </div>
+                        </div>
+                        <div style="padding:14px; display:grid; grid-template-columns:32px 1fr; gap:12px; border-bottom:1px solid var(--outline-variant);">
+                          <div style="width:32px; height:32px; border-radius:999px; background:var(--surface-container-high); display:flex; align-items:center; justify-content:center;">
+                            <span class="material-symbols-rounded" style="font-size:18px; color:var(--success-50); font-variation-settings:'FILL' 1,'wght' 500">repeat</span>
+                          </div>
+                          <div>
+                            <div style="font-size:13px; line-height:18px; color:var(--fg-1);">Marco Díaz reposted your post <span style="color:var(--fg-3);"> · 5h</span></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div style="position:absolute; top:8px; left:50%; transform:translateX(-50%); width:90px; height:22px; border-radius:999px; background:#0A0E16; z-index:30;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="feature__body">
+              <div class="feature__tag" style="color: var(--tertiary);">03 — Quiet</div>
+              <h3 class="feature__title">Notifications you can live with.</h3>
+              <p class="feature__copy">Grouped, throttled, and finally calm. Mute keywords, turn off pings, keep only the people you actually want to hear from.</p>
+            </div>
+          </article>
+
+        </div>
+      </section>
+
+      <!-- ── Adaptive ────────────────────────────────────── -->
+      <section id="adaptive" class="adaptive">
+        <div class="adaptive__copy">
+          <div class="section-header__eyebrow" style="color: var(--peach-90);">Adaptive</div>
+          <h2 class="adaptive__title">One app. <em>Every</em> Android.</h2>
+          <p class="adaptive__sub">Compact phone, dual-pane tablet, three-pane foldable. Nubecita reflows to fill whatever screen you've got — and remembers your context when you switch.</p>
+          <ul class="adaptive__list">
+            <li><span class="material-symbols-rounded" style="font-size:18px">check</span> Compose without losing the feed you were reading</li>
+            <li><span class="material-symbols-rounded" style="font-size:18px">check</span> Pin a thread on the second pane</li>
+            <li><span class="material-symbols-rounded" style="font-size:18px">check</span> Fold-aware: hinge stays at column gutters</li>
+          </ul>
+        </div>
+
+        <div class="adaptive__visual">
+          <!-- Tablet w/ DualPaneMock -->
+          <div class="adaptive__device adaptive__device--tablet">
+            <div style="width:520px; height:380px; border-radius:22px; padding:8px; background:#0A0E16; box-shadow:0 30px 80px -20px rgba(0,13,31,0.45), 0 0 0 1.5px rgba(255,255,255,0.06);">
+              <div style="width:100%; height:100%; border-radius:16px; overflow:hidden; background:var(--surface); display:flex;">
+                <!-- Nav rail -->
+                <div style="width:64px; background:var(--surface-container); display:flex; flex-direction:column; align-items:center; padding-top:16px; gap:4px;">
+                  <div style="margin-bottom:12px;">
+                    <svg width="26" height="20" viewBox="0 0 72 56" xmlns="http://www.w3.org/2000/svg">
+                      <g>
+                        <circle cx="22" cy="34" r="14" fill="var(--primary)"/>
+                        <circle cx="38" cy="28" r="18" fill="var(--primary)"/>
+                        <circle cx="56" cy="34" r="14" fill="var(--primary)"/>
+                        <rect x="14" y="38" width="48" height="14" rx="7" fill="var(--primary)"/>
+                        <path d="M 28 30 q 3 -3 6 0" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+                        <path d="M 42 30 q 3 -3 6 0" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+                      </g>
+                    </svg>
+                  </div>
+                  <div style="width:48px; height:32px; border-radius:999px; display:flex; align-items:center; justify-content:center; background:var(--primary-container); color:var(--on-primary-container); margin:4px 0;">
+                    <span class="material-symbols-rounded" style="font-size:18px; font-variation-settings:'FILL' 1">home</span>
+                  </div>
+                  <div style="width:48px; height:32px; border-radius:999px; display:flex; align-items:center; justify-content:center; background:transparent; color:var(--on-surface-variant); margin:4px 0;">
+                    <span class="material-symbols-rounded" style="font-size:18px; font-variation-settings:'FILL' 0">search</span>
+                  </div>
+                  <div style="width:48px; height:32px; border-radius:999px; display:flex; align-items:center; justify-content:center; background:transparent; color:var(--on-surface-variant); margin:4px 0;">
+                    <span class="material-symbols-rounded" style="font-size:18px; font-variation-settings:'FILL' 0">mail</span>
+                  </div>
+                  <div style="width:48px; height:32px; border-radius:999px; display:flex; align-items:center; justify-content:center; background:transparent; color:var(--on-surface-variant); margin:4px 0;">
+                    <span class="material-symbols-rounded" style="font-size:18px; font-variation-settings:'FILL' 0">notifications</span>
+                  </div>
+                  <div style="width:48px; height:32px; border-radius:999px; display:flex; align-items:center; justify-content:center; background:transparent; color:var(--on-surface-variant); margin:4px 0;">
+                    <span class="material-symbols-rounded" style="font-size:18px; font-variation-settings:'FILL' 0">person</span>
+                  </div>
+                </div>
+
+                <!-- Feed pane -->
+                <div style="flex:1.2; border-right:1px solid var(--outline-variant); overflow:hidden;">
+                  <div style="height:40px; padding:0 14px; display:flex; align-items:center; font-family:var(--font-body); font-weight:600; font-size:15px;">For you</div>
+                  <div style="border-top:1px solid var(--outline-variant);">
+                    <div style="padding:8px 12px; display:grid; grid-template-columns:24px 1fr; gap:8px; border-bottom:1px solid var(--outline-variant); padding-left:12px;">
+                      <div style="width:24px; height:24px; border-radius:999px; margin-top:2px; background:linear-gradient(135deg, hsl(210,70%,70%), hsl(250,60%,55%));"></div>
+                      <div>
+                        <div style="font-size:11px; font-weight:600; color:var(--fg-1);">Alice Chen</div>
+                        <div style="font-size:11px; line-height:16px; color:var(--fg-2); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">The thing about building a Bluesky client in 2026 is you realize how much of the web we gave up.</div>
+                        <div style="font-size:10px; color:var(--peach-60); margin-top:2px;">♥ liked</div>
+                      </div>
+                    </div>
+                    <div style="padding:8px 12px; display:grid; grid-template-columns:24px 1fr; gap:8px; border-bottom:1px solid var(--outline-variant); padding-left:12px;">
+                      <div style="width:24px; height:24px; border-radius:999px; margin-top:2px; background:linear-gradient(135deg, hsl(35,70%,70%), hsl(75,60%,55%));"></div>
+                      <div>
+                        <div style="font-size:11px; font-weight:600; color:var(--fg-1);">Marco Díaz</div>
+                        <div style="font-size:11px; line-height:16px; color:var(--fg-2); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">Tiny victory: adaptive layouts working on the Fold.</div>
+                      </div>
+                    </div>
+                    <div style="padding:8px 12px; display:grid; grid-template-columns:24px 1fr; gap:8px; border-bottom:1px solid var(--outline-variant); padding-left:12px;">
+                      <div style="width:24px; height:24px; border-radius:999px; margin-top:2px; background:linear-gradient(135deg, hsl(320,70%,70%), hsl(0,60%,55%));"></div>
+                      <div>
+                        <div style="font-size:11px; font-weight:600; color:var(--fg-1);">Sana Okafor</div>
+                        <div style="font-size:11px; line-height:16px; color:var(--fg-2); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">Reading recs for the plane?</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Detail pane -->
+                <div style="flex:1.4; overflow:hidden; background:var(--surface-container-low);">
+                  <div style="height:40px; padding:0 14px; display:flex; align-items:center; gap:8px; font-family:var(--font-body); font-weight:600; font-size:14px;">
+                    <span class="material-symbols-rounded" style="font-size:18px">arrow_back</span>
+                    Thread
+                  </div>
+                  <div style="background:var(--surface); margin:0 12px; border-radius:12px; padding:12px; border:1px solid var(--outline-variant);">
+                    <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
+                      <div style="width:28px; height:28px; border-radius:999px; background:linear-gradient(135deg, hsl(210,70%,70%), hsl(250,60%,55%));"></div>
+                      <div style="font-size:12px; font-weight:600;">Alice Chen</div>
+                      <div style="font-size:11px; color:var(--fg-3);">· 3h</div>
+                    </div>
+                    <div style="font-size:13px; line-height:20px; color:var(--fg-1);">The thing about building a Bluesky client in 2026 is you realize how much of the web we gave up trying to fix. ☁︎</div>
+                    <div style="display:flex; gap:12px; margin-top:8px; color:var(--fg-3); font-size:11px;">
+                      <span>12 replies</span><span>4 reposts</span><span style="color:var(--peach-60);">87 likes</span>
+                    </div>
+                  </div>
+                  <div style="padding:12px 16px; font-size:11px; color:var(--fg-3);">3 replies</div>
+                  <div style="padding:8px 12px; display:grid; grid-template-columns:24px 1fr; gap:8px; border-bottom:1px solid var(--outline-variant); padding-left:28px;">
+                    <div style="width:24px; height:24px; border-radius:999px; margin-top:2px; background:linear-gradient(135deg, hsl(35,70%,70%), hsl(75,60%,55%));"></div>
+                    <div>
+                      <div style="font-size:11px; font-weight:600; color:var(--fg-1);">Marco Díaz</div>
+                      <div style="font-size:11px; line-height:16px; color:var(--fg-2); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">This is exactly it. The readable-text part especially.</div>
+                    </div>
+                  </div>
+                  <div style="padding:8px 12px; display:grid; grid-template-columns:24px 1fr; gap:8px; border-bottom:1px solid var(--outline-variant); padding-left:28px;">
+                    <div style="width:24px; height:24px; border-radius:999px; margin-top:2px; background:linear-gradient(135deg, hsl(320,70%,70%), hsl(0,60%,55%));"></div>
+                    <div>
+                      <div style="font-size:11px; font-weight:600; color:var(--fg-1);">Sana Okafor</div>
+                      <div style="font-size:11px; line-height:16px; color:var(--fg-2); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">Can't wait to try this on my Fold.</div>
+                      <div style="font-size:10px; color:var(--peach-60); margin-top:2px;">♥ liked</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Phone (small FeedScreen) -->
+          <div class="adaptive__device adaptive__device--phone">
+            <div class="phone-shell" style="width:220px; height:460px; border-radius:44px; background:#0A0E16; padding:8px; position:relative; box-shadow:0 30px 80px -20px rgba(0,13,31,0.45), 0 0 0 1.5px rgba(255,255,255,0.08), inset 0 0 0 1px rgba(255,255,255,0.04);">
+              <div style="width:100%; height:100%; border-radius:36px; overflow:hidden; position:relative; background:var(--surface); color:var(--fg-1);">
+                <div style="display:flex; flex-direction:column; height:100%; background:var(--surface);">
+                  <div style="height:36px; padding:0 22px; display:flex; align-items:center; justify-content:space-between; font-family:var(--font-body); font-weight:600; font-size:13px; color:var(--fg-1);">
+                    <span>9:41</span>
+                    <span style="display:flex; gap:6px; align-items:center;">
+                      <span class="material-symbols-rounded" style="font-size:14px">wifi</span>
+                      <span class="material-symbols-rounded" style="font-size:14px">battery_full</span>
+                    </span>
+                  </div>
+                  <div style="height:56px; padding:0 16px; display:flex; align-items:center; gap:12px;">
+                    <svg width="22" height="17" viewBox="0 0 72 56" xmlns="http://www.w3.org/2000/svg">
+                      <g>
+                        <circle cx="22" cy="34" r="14" fill="var(--primary)"/>
+                        <circle cx="38" cy="28" r="18" fill="var(--primary)"/>
+                        <circle cx="56" cy="34" r="14" fill="var(--primary)"/>
+                        <rect x="14" y="38" width="48" height="14" rx="7" fill="var(--primary)"/>
+                      </g>
+                    </svg>
+                    <div style="font-family:var(--font-display); font-weight:600; font-size:20px; font-variation-settings:'SOFT' 50; color:var(--fg-1);">nubecita</div>
+                  </div>
+                  <div style="display:flex; padding:0 16px; gap:18px; border-bottom:1px solid var(--outline-variant);">
+                    <div style="padding:10px 0; border-bottom:3px solid var(--primary); color:var(--fg-1); font-weight:600; font-size:12px;">For you</div>
+                    <div style="padding:10px 0; color:var(--fg-3); font-weight:600; font-size:12px;">Following</div>
+                  </div>
+                  <div style="flex:1; overflow:hidden;">
+                    <div style="padding:10px 12px; display:grid; grid-template-columns:32px 1fr; gap:8px; border-bottom:1px solid var(--outline-variant);">
+                      <div style="width:32px; height:32px; border-radius:999px; background:linear-gradient(135deg, hsl(210,70%,70%), hsl(250,60%,55%));"></div>
+                      <div>
+                        <div style="font-size:12px; font-weight:600; color:var(--fg-1);">Alice Chen</div>
+                        <div style="font-size:12px; line-height:17px; color:var(--fg-1);">Small clients, good defaults, readable text. ☁︎</div>
+                      </div>
+                    </div>
+                    <div style="padding:10px 12px; display:grid; grid-template-columns:32px 1fr; gap:8px; border-bottom:1px solid var(--outline-variant);">
+                      <div style="width:32px; height:32px; border-radius:999px; background:linear-gradient(135deg, hsl(35,70%,70%), hsl(75,60%,55%));"></div>
+                      <div>
+                        <div style="font-size:12px; font-weight:600; color:var(--fg-1);">Marco Díaz</div>
+                        <div style="font-size:12px; line-height:17px; color:var(--fg-1);">Tiny victory: adaptive layouts on the Fold.</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div style="position:absolute; top:8px; left:50%; transform:translateX(-50%); width:80px; height:20px; border-radius:999px; background:#0A0E16; z-index:30;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Manifesto ───────────────────────────────────── -->
+      <section class="manifesto">
+        <div class="manifesto__mark">☁︎</div>
+        <blockquote class="manifesto__quote">
+          Quiet up here.<br>Just the sky and the people you actually want to read.
+        </blockquote>
+        <div class="manifesto__by">— Nubecita team</div>
+      </section>
+
+      <!-- ── Download CTA ────────────────────────────────── -->
+      <section id="download" class="cta">
+        <div class="hero__clouds" aria-hidden="true">
+          <div class="hero__cloud" style="top:12%; left:6%; width:110px; opacity:0.18; animation: pmFloat 6s ease-in-out 0s infinite;">
+            <svg width="110" height="110" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+              <g transform="translate(4, 16)">
+                <circle cx="18" cy="26" r="14" fill="#fff"/>
+                <circle cx="34" cy="20" r="18" fill="#fff"/>
+                <circle cx="52" cy="26" r="14" fill="#fff"/>
+                <rect x="10" y="30" width="48" height="14" rx="7" fill="#fff"/>
+              </g>
+            </svg>
+          </div>
+          <div class="hero__cloud" style="top:60%; left:8%; width:90px; opacity:0.16; animation: pmFloat 6s ease-in-out 0.6s infinite;">
+            <svg width="90" height="90" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+              <g transform="translate(4, 16)">
+                <circle cx="18" cy="26" r="14" fill="#fff"/>
+                <circle cx="34" cy="20" r="18" fill="#fff"/>
+                <circle cx="52" cy="26" r="14" fill="#fff"/>
+                <rect x="10" y="30" width="48" height="14" rx="7" fill="#fff"/>
+              </g>
+            </svg>
+          </div>
+          <div class="hero__cloud" style="top:74%; left:46%; width:130px; opacity:0.12; animation: pmFloat 6s ease-in-out 1.8s infinite;">
+            <svg width="130" height="130" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+              <g transform="translate(4, 16)">
+                <circle cx="18" cy="26" r="14" fill="#fff"/>
+                <circle cx="34" cy="20" r="18" fill="#fff"/>
+                <circle cx="52" cy="26" r="14" fill="#fff"/>
+                <rect x="10" y="30" width="48" height="14" rx="7" fill="#fff"/>
+              </g>
+            </svg>
+          </div>
+          <div class="hero__cloud" style="top:18%; left:78%; width:60px; opacity:0.20; animation: pmFloat 6s ease-in-out 0.3s infinite;">
+            <svg width="60" height="60" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+              <g transform="translate(4, 16)">
+                <circle cx="18" cy="26" r="14" fill="#fff"/>
+                <circle cx="34" cy="20" r="18" fill="#fff"/>
+                <circle cx="52" cy="26" r="14" fill="#fff"/>
+                <rect x="10" y="30" width="48" height="14" rx="7" fill="#fff"/>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <div class="cta__inner">
+          <div class="cta__icon">
+            <svg width="120" height="120" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Nubecita cloud">
+              <g transform="translate(4, 16)">
+                <circle cx="18" cy="26" r="14" fill="#fff"/>
+                <circle cx="34" cy="20" r="18" fill="#fff"/>
+                <circle cx="52" cy="26" r="14" fill="#fff"/>
+                <rect x="10" y="30" width="48" height="14" rx="7" fill="#fff"/>
+                <path d="M 24 22 q 3 -3 6 0" stroke="var(--sky-40)" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+                <path d="M 38 22 q 3 -3 6 0" stroke="var(--sky-40)" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+              </g>
+            </svg>
+          </div>
+          <h2 class="cta__title">Pick up your phone.<br>Look up.</h2>
+          <p class="cta__sub">Free forever. No ads. Open source. Your timeline, your ☁︎.</p>
+          <div class="cta__buttons">
+            <!-- TODO: Play Store URL once published -->
+            <a href="#" class="play-badge play-badge--lg">
+              <span class="material-symbols-rounded play-badge__icon">play_arrow</span>
+              <span class="play-badge__text">
+                <span class="play-badge__sup">Get it on</span>
+                <span class="play-badge__big">Google Play</span>
+              </span>
+            </a>
+            <a href="https://github.com/kikin81/nubecita" rel="noopener" class="cta__secondary">
+              <span class="material-symbols-rounded" style="font-size:20px">code</span>
+              Build from source
+            </a>
+          </div>
+          <div class="cta__small">Requires Android 10 or later · 18 MB · v1.4 released this week</div>
+        </div>
+      </section>
+
+      <!-- ── FAQ ─────────────────────────────────────────── -->
+      <section id="faq" class="faq">
+        <div class="faq__header">
+          <div class="section-header__eyebrow">FAQ</div>
+          <h2 class="section-header__title">Quick questions.</h2>
+        </div>
+        <div class="faq__list" id="faqList">
+          <div class="faq__item faq__item--open" data-faq>
+            <div class="faq__q">
+              <span>Is Nubecita free?</span>
+              <span class="material-symbols-rounded faq__chev" aria-hidden="true">remove</span>
+            </div>
+            <div class="faq__a-wrap">
+              <p class="faq__a">Yes. Free forever, no ads, no premium tier. The app is open source under the AGPL — fork it, audit it, run your own build.</p>
+            </div>
+          </div>
+          <div class="faq__item" data-faq>
+            <div class="faq__q">
+              <span>Do I need a Bluesky account?</span>
+              <span class="material-symbols-rounded faq__chev" aria-hidden="true">add</span>
+            </div>
+            <div class="faq__a-wrap">
+              <p class="faq__a">Yes — Nubecita is a client for the AT Protocol network. Sign up at bsky.app or use any AT Proto handle. We never see your password; auth happens directly with your PDS.</p>
+            </div>
+          </div>
+          <div class="faq__item" data-faq>
+            <div class="faq__q">
+              <span>Why Android only?</span>
+              <span class="material-symbols-rounded faq__chev" aria-hidden="true">add</span>
+            </div>
+            <div class="faq__a-wrap">
+              <p class="faq__a">We want to do one platform really, really well. Android — including tablets and foldables — is genuinely under-served by social clients. iOS may follow. The web client is here on this page.</p>
+            </div>
+          </div>
+          <div class="faq__item" data-faq>
+            <div class="faq__q">
+              <span>What's special about Material 3 Expressive?</span>
+              <span class="material-symbols-rounded faq__chev" aria-hidden="true">add</span>
+            </div>
+            <div class="faq__a-wrap">
+              <p class="faq__a">It's Google's May 2025 evolution of Material You — saturated tonal palettes, shape-morphing buttons, spring-based motion, and a bigger emphasis on type. We took the mechanics and added our own brand on top.</p>
+            </div>
+          </div>
+          <div class="faq__item" data-faq>
+            <div class="faq__q">
+              <span>Does it work offline?</span>
+              <span class="material-symbols-rounded faq__chev" aria-hidden="true">add</span>
+            </div>
+            <div class="faq__a-wrap">
+              <p class="faq__a">Yes — your feed, threads you've opened, and drafts persist offline. Posts queue and send when you reconnect.</p>
+            </div>
+          </div>
+          <div class="faq__item" data-faq>
+            <div class="faq__q">
+              <span>How do you make money?</span>
+              <span class="material-symbols-rounded faq__chev" aria-hidden="true">add</span>
+            </div>
+            <div class="faq__a-wrap">
+              <p class="faq__a">We don't, yet. Nubecita is funded by a small grant and the spare time of three people. If we ever charge for anything, it'll be optional cosmetic stuff. The product is free, period.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ── Footer ──────────────────────────────────────── -->
+    <footer class="footer">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <svg width="48" height="48" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Nubecita logo">
+            <g transform="translate(4, 16)">
+              <circle cx="18" cy="26" r="14" fill="var(--primary)"/>
+              <circle cx="34" cy="20" r="18" fill="var(--primary)"/>
+              <circle cx="52" cy="26" r="14" fill="var(--primary)"/>
+              <rect x="10" y="30" width="48" height="14" rx="7" fill="var(--primary)"/>
+              <path d="M 24 22 q 3 -3 6 0" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+              <path d="M 38 22 q 3 -3 6 0" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+            </g>
+          </svg>
+          <span class="footer__wordmark">nubecita</span>
+        </div>
+        <div class="footer__cols">
+          <div class="footer__col">
+            <div class="footer__col-title">Product</div>
+            <a href="#features">Features</a>
+            <a href="#">Roadmap</a>
+            <a href="#">Changelog</a>
+            <a href="#">Status</a>
+          </div>
+          <div class="footer__col">
+            <div class="footer__col-title">Get it</div>
+            <!-- TODO: Play Store URL once published -->
+            <a href="#">Google Play</a>
+            <a href="#">F-Droid</a>
+            <a href="https://github.com/kikin81/nubecita/releases" rel="noopener">GitHub Releases</a>
+            <a href="#">Beta channel</a>
+          </div>
+          <div class="footer__col">
+            <div class="footer__col-title">Open source</div>
+            <a href="https://github.com/kikin81/nubecita" rel="noopener">GitHub</a>
+            <a href="https://github.com/kikin81/nubecita/issues" rel="noopener">Issues</a>
+            <a href="https://github.com/kikin81/nubecita/blob/main/CONTRIBUTING.md" rel="noopener">Contribute</a>
+            <a href="https://github.com/kikin81/nubecita/blob/main/LICENSE" rel="noopener">License (AGPL)</a>
+          </div>
+          <div class="footer__col">
+            <div class="footer__col-title">Company</div>
+            <a href="#">Manifesto</a>
+            <a href="#">Press</a>
+            <a href="mailto:hello@nubecita.app">Contact</a>
+            <a href="https://bsky.app/profile/nubecita.app" rel="noopener">@nubecita.app</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span>© 2026 Nubecita. Made on Earth, mostly under clouds. · <a href="/privacy.html">Privacy</a></span>
+        <span class="footer__handle">@nubecita.app</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    (function () {
+      // Theme: read stored or prefers-color-scheme
+      var root = document.documentElement;
+      var stored = null;
+      try { stored = localStorage.getItem('nubecita-theme'); } catch (e) {}
+      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var theme = stored || (prefersDark ? 'dark' : 'light');
+      root.setAttribute('data-theme', theme);
+
+      var toggle = document.getElementById('themeToggle');
+      var icon = document.getElementById('themeIcon');
+      function syncIcon() {
+        icon.textContent = root.getAttribute('data-theme') === 'dark' ? 'light_mode' : 'dark_mode';
+      }
+      syncIcon();
+      toggle.addEventListener('click', function () {
+        var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        try { localStorage.setItem('nubecita-theme', next); } catch (e) {}
+        syncIcon();
+      });
+
+      // Nav scroll state
+      var nav = document.getElementById('nav');
+      var themeBtn = document.getElementById('themeToggle');
+      var navCta = document.getElementById('navCta');
+      function onScroll() {
+        var scrolled = window.scrollY > 40;
+        nav.classList.toggle('nav--scrolled', scrolled);
+        themeBtn.classList.toggle('nav__theme--hero', !scrolled);
+        navCta.classList.toggle('btn--on-hero', !scrolled);
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      // FAQ accordion (single-open)
+      var items = document.querySelectorAll('[data-faq]');
+      items.forEach(function (item) {
+        item.addEventListener('click', function () {
+          var wasOpen = item.classList.contains('faq__item--open');
+          items.forEach(function (i) {
+            i.classList.remove('faq__item--open');
+            var chev = i.querySelector('.faq__chev');
+            if (chev) chev.textContent = 'add';
+          });
+          if (!wasOpen) {
+            item.classList.add('faq__item--open');
+            var chev = item.querySelector('.faq__chev');
+            if (chev) chev.textContent = 'remove';
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
