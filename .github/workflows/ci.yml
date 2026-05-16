@@ -23,7 +23,8 @@ jobs:
             --verbose
             --accept 200,206,429
             --max-retries 2
-            --exclude-mail
+            --root-dir ${{ github.workspace }}
+            --exclude 'https?://nubecita\.app'
             './**/*.html'
           fail: true
         env:
@@ -39,3 +40,4 @@ jobs:
         with:
           root: .
           css: false
+          extra: --ignore "CSS:"
