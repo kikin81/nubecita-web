@@ -7,10 +7,11 @@
   <meta name="description" content="Privacy policy for Nubecita, a native Android Bluesky client." />
   <meta name="theme-color" content="#0A7AFF" />
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml" />
+  <link rel="canonical" href="https://nubecita.app/privacy-policy" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="colors_and_type.css" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="/colors_and_type.css" />
+  <link rel="stylesheet" href="/styles.css" />
   <style>
     .legal-page {
       max-width: 720px;
@@ -69,14 +70,15 @@
     <a href="/" class="back">← Back to nubecita.app</a>
     <header>
       <h1>Privacy Policy</h1>
-      <p class="updated">Last updated: May 15, 2026</p>
+      <p class="updated">Last updated: May 16, 2026</p>
     </header>
 
     <p>
       Nubecita is a native Android client for the Bluesky social network, built on the
       <a href="https://atproto.com" target="_blank" rel="noopener">AT Protocol</a>.
       We designed Nubecita to be a quiet, calm reading experience — and that extends to how
-      it handles your data. This policy explains what Nubecita does and does not collect.
+      it handles your data. This policy explains what Nubecita collects, what it does not,
+      and the choices you have.
     </p>
 
     <h2>The short version</h2>
@@ -87,13 +89,13 @@
       <li>Authentication tokens are stored encrypted on your device only.</li>
       <li>Posts, follows, and any account activity live on your Bluesky account at your Personal
         Data Server (PDS, e.g. <code>bsky.social</code>), not on Nubecita's servers.</li>
-      <li>Nubecita does not contain advertising, third-party trackers, or analytics SDKs.</li>
+      <li>Nubecita uses Firebase Analytics and Firebase Crashlytics (operated by Google) for
+        basic, aggregated usage analytics and crash reporting. Analytics can be turned off in
+        the app's Settings.</li>
+      <li>Nubecita contains no advertising and no third-party advertising trackers.</li>
     </ul>
 
-    <h2>Information Nubecita handles</h2>
-    <p>
-      To function as a Bluesky client, the app holds the following on your device:
-    </p>
+    <h2>Information Nubecita stores on your device</h2>
     <ul>
       <li><strong>OAuth tokens</strong> — short-lived access and refresh tokens issued by your
         PDS, stored in Android's encrypted credential storage and bound to your device via
@@ -101,13 +103,42 @@
       <li><strong>Cached content</strong> — posts, profiles, images, and videos you have viewed
         recently, stored locally so the app can render quickly and work briefly offline. You can
         clear this at any time from Android Settings → Apps → Nubecita → Storage.</li>
-      <li><strong>App preferences</strong> — your chosen theme, feed selections, and similar
-        settings, stored locally on your device.</li>
+      <li><strong>App preferences</strong> — your chosen theme, feed selections, your analytics
+        opt-out choice, and similar settings, stored locally on your device.</li>
     </ul>
+
+    <h2>Analytics and crash reporting</h2>
+    <p>
+      Nubecita uses two Firebase services from Google to keep the app reliable:
+    </p>
+    <ul>
+      <li><strong>Firebase Analytics</strong> collects pseudonymous information about how the
+        app is used — for example, app open events, which screens are viewed, the app version,
+        device model, Android version, language, country derived from your IP address, and a
+        randomly generated app-instance identifier. This information is sent to Google and is
+        used only to understand app health and feature usage. Nubecita does not collect the
+        Android Advertising ID and does not use this data for advertising or personalization.</li>
+      <li><strong>Firebase Crashlytics</strong> sends a crash report to Google when the app
+        crashes. Crash reports contain technical details such as the stack trace, device model,
+        OS version, app version, the state of the app at the time of the crash, and a randomly
+        generated installation identifier. Crash reports do not include the contents of your
+        posts, messages, drafts, or account credentials.</li>
+    </ul>
+    <p>
+      You can disable usage analytics at any time from the app's <strong>Settings</strong>
+      screen. When analytics are disabled, Nubecita stops sending analytics events to Firebase
+      from your device.
+    </p>
+    <p>
+      Google's handling of Firebase data is governed by the
+      <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">Firebase Privacy and Security</a>
+      documentation and Google's
+      <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Privacy Policy</a>.
+    </p>
 
     <h2>Information sent to third parties</h2>
     <p>
-      Nubecita communicates directly with two categories of services on your behalf:
+      Nubecita communicates with the following services on your behalf:
     </p>
     <ul>
       <li><strong>Your Personal Data Server</strong> (typically Bluesky's <code>bsky.social</code>).
@@ -117,10 +148,11 @@
       <li><strong>Media hosts</strong> referenced in posts you view (image and video CDNs, link
         previews). The host of any embedded content will see your IP address when your device
         fetches it, the same way a web browser does.</li>
+      <li><strong>Google (Firebase Analytics and Crashlytics)</strong>, as described in the
+        previous section.</li>
     </ul>
     <p>
-      Nubecita does not send your data to any analytics, advertising, or crash-reporting service
-      operated by us or any third party.
+      All network traffic from Nubecita to these services is sent over HTTPS.
     </p>
 
     <h2>Permissions Nubecita requests</h2>
@@ -128,9 +160,18 @@
       <li><strong>Internet access</strong> — required to talk to Bluesky.</li>
       <li><strong>Photos / media access</strong> — only when you choose to attach an image or
         video to a post. Selected media is uploaded directly to your PDS.</li>
-      <li><strong>Notifications</strong> — only if you opt in. Notification delivery uses standard
-        Android system facilities and the events you choose to subscribe to on your PDS.</li>
+      <li><strong>Notifications</strong> — only if you opt in. Notification delivery uses
+        standard Android system facilities and the events you choose to subscribe to on your PDS.</li>
     </ul>
+
+    <h2>Data security</h2>
+    <p>
+      Nubecita relies on platform protections for the data it holds on your device. OAuth
+      tokens are stored in Android's encrypted credential storage and are bound to your device
+      via DPoP, so an exfiltrated token cannot be replayed from another device. All network
+      requests use HTTPS. Nubecita does not operate any server that holds your personal data,
+      so there is no Nubecita-side account database that could be breached.
+    </p>
 
     <h2>Children's privacy</h2>
     <p>
@@ -140,6 +181,7 @@
 
     <h2>Your choices</h2>
     <ul>
+      <li>Turn off usage analytics from the in-app <strong>Settings</strong> screen at any time.</li>
       <li>Sign out at any time from inside the app. Signing out revokes the locally stored OAuth
         tokens.</li>
       <li>Clear the app's local data from Android Settings → Apps → Nubecita → Storage at any time.</li>
@@ -156,8 +198,9 @@
 
     <h2>Changes to this policy</h2>
     <p>
-      If this policy changes in a material way, the updated date at the top of this page will
-      change and the revised policy will be posted at this URL before the change takes effect.
+      If this policy changes in a material way, the "Last updated" date at the top of this page
+      will change and the revised policy will be posted at this URL before the change takes
+      effect.
     </p>
 
     <h2>Contact</h2>
