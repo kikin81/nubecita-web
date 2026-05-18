@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Not found — Nubecita</title>
+  <meta name="description" content="That page seems to have drifted off somewhere." />
+  <meta name="theme-color" content="#0A7AFF" />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="/colors_and_type.css" />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .not-found {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 48px 24px;
+      box-sizing: border-box;
+    }
+    .not-found__mark {
+      width: 96px;
+      height: 96px;
+      margin-bottom: 32px;
+    }
+    .not-found__code {
+      font-family: "Fraunces", serif;
+      font-weight: 600;
+      font-size: clamp(72px, 14vw, 144px);
+      line-height: 0.95;
+      letter-spacing: -0.03em;
+      margin: 0 0 16px;
+      color: var(--md-sys-color-on-surface, #1a1c1e);
+    }
+    .not-found__title {
+      font-family: "Fraunces", serif;
+      font-weight: 500;
+      font-size: clamp(20px, 3vw, 28px);
+      line-height: 1.4;
+      margin: 0 0 40px;
+      color: var(--md-sys-color-on-surface-variant, #44474e);
+      max-width: 480px;
+    }
+    .not-found__link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 17px;
+      color: var(--sky-50, #0A7AFF);
+      text-decoration: none;
+      border-bottom: 1px solid currentColor;
+      padding-bottom: 2px;
+    }
+    .not-found__link:hover {
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <main class="not-found">
+    <svg class="not-found__mark" viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Nubecita cloud">
+      <g transform="translate(22, 32)">
+        <circle cx="18" cy="26" r="14" fill="#0A7AFF"/>
+        <circle cx="34" cy="20" r="18" fill="#0A7AFF"/>
+        <circle cx="52" cy="26" r="14" fill="#0A7AFF"/>
+        <rect x="10" y="30" width="48" height="14" rx="7" fill="#0A7AFF"/>
+        <path d="M 24 22 q 3 -3 6 0" stroke="#FFFFFF" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        <path d="M 38 22 q 3 -3 6 0" stroke="#FFFFFF" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      </g>
+    </svg>
+    <h1 class="not-found__code">404</h1>
+    <p class="not-found__title">This page seems to have drifted off somewhere.</p>
+    <a href="/" class="not-found__link">← Back to nubecita.app</a>
+  </main>
+</body>
+</html>
