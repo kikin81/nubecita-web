@@ -8,7 +8,10 @@
   "policy_uri": "https://nubecita.app/privacy-policy",
   "dpop_bound_access_tokens": true,
   "grant_types": ["authorization_code", "refresh_token"],
-  "redirect_uris": ["app.nubecita:/oauth-redirect"],
+  "redirect_uris": [
+    "app.nubecita:/oauth-redirect",
+    "https://nubecita.app/oauth-redirect"
+  ],
   "response_types": ["code"],
   "scope": "atproto transition:generic transition:chat.bsky",
   "token_endpoint_auth_method": "none"
