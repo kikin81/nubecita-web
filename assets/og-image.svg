@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3F92FF"/>
+      <stop offset="1" stop-color="#0062B1"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <g transform="translate(460, 100) scale(4)">
+    <circle cx="18" cy="26" r="14" fill="#FFFFFF"/>
+    <circle cx="34" cy="20" r="18" fill="#FFFFFF"/>
+    <circle cx="52" cy="26" r="14" fill="#FFFFFF"/>
+    <rect x="10" y="30" width="48" height="14" rx="7" fill="#FFFFFF"/>
+    <path d="M 24 22 q 3 -3 6 0" stroke="#0062B1" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    <path d="M 38 22 q 3 -3 6 0" stroke="#0062B1" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <text x="600" y="440" font-family="Fraunces, serif" font-size="120" font-weight="600" fill="#FFFFFF" text-anchor="middle">nubecita</text>
+
+  <text x="600" y="510" font-family="Fraunces, serif" font-size="30" font-weight="400" fill="#FFFFFF" fill-opacity="0.92" text-anchor="middle">A calm, native Android Bluesky client</text>
+</svg>
