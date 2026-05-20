@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Child Safety Standards — Nubecita</title>
+  <meta name="description" content="Nubecita's child safety standards and CSAM/CSAE prevention policy." />
+  <meta name="theme-color" content="#0A7AFF" />
+  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml" />
+  <link rel="canonical" href="https://nubecita.app/child-safety" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="/colors_and_type.css" />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .legal-page {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 96px 24px 96px;
+    }
+    .legal-page header {
+      margin-bottom: 48px;
+    }
+    .legal-page h1 {
+      font-family: "Fraunces", serif;
+      font-weight: 600;
+      font-size: clamp(40px, 6vw, 64px);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin: 0 0 12px;
+    }
+    .legal-page .updated {
+      color: var(--md-sys-color-on-surface-variant, #44474e);
+      font-size: 15px;
+    }
+    .legal-page h2 {
+      font-family: "Fraunces", serif;
+      font-weight: 600;
+      font-size: 26px;
+      line-height: 1.2;
+      margin: 48px 0 12px;
+    }
+    .legal-page p,
+    .legal-page li {
+      font-size: 17px;
+      line-height: 1.65;
+      color: var(--md-sys-color-on-surface, #1a1c1e);
+    }
+    .legal-page ul {
+      padding-left: 22px;
+    }
+    .legal-page li + li {
+      margin-top: 8px;
+    }
+    .legal-page a {
+      color: var(--sky-50, #0A7AFF);
+      text-decoration: underline;
+    }
+    .legal-page .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 15px;
+      margin-bottom: 24px;
+    }
+  </style>
+</head>
+<body>
+  <main class="legal-page">
+    <a href="/" class="back">← Back to nubecita.app</a>
+    <header>
+      <h1>Child Safety Standards</h1>
+      <p class="updated">Last updated: May 19, 2026</p>
+    </header>
+
+    <p>
+      Nubecita is a free, open-source third-party Android client for the
+      <a href="https://atproto.com" target="_blank" rel="noopener">AT Protocol</a>
+      (Bluesky) network. We maintain a strict, zero-tolerance policy regarding
+      Child Sexual Abuse Material (CSAM) and Child Sexual Exploitation and Abuse
+      (CSAE). This page describes how Nubecita supports child safety on the
+      network and within the app.
+    </p>
+
+    <h2>Zero-tolerance policy</h2>
+    <p>
+      Nubecita prohibits the creation, sharing, transmission, or viewing of CSAM
+      or CSAE through the app. Any account discovered attempting to distribute
+      or access such material via Nubecita will be blocked from using the
+      application, in addition to any action taken by Bluesky or other network
+      moderators.
+    </p>
+
+    <h2>Built-in reporting tools</h2>
+    <p>
+      Nubecita exposes the standard AT Protocol reporting tools directly on
+      every post and profile in the user interface:
+    </p>
+    <ul>
+      <li>
+        Any post, account, list, or feed can be flagged through the in-app
+        "Report" action.
+      </li>
+      <li>
+        Reports are submitted using the AT Protocol moderation lexicon
+        (<code>com.atproto.moderation.createReport</code>) and routed to the
+        Bluesky moderation service (Ozone) for review and action at the
+        network level.
+      </li>
+      <li>
+        Reports flagged as involving minors are escalated to the Bluesky Trust
+        &amp; Safety team, which is responsible for cooperating with NCMEC and
+        other authorities.
+      </li>
+    </ul>
+
+    <h2>User-level moderation controls</h2>
+    <p>
+      Nubecita gives users immediate controls to remove unwanted accounts and
+      content from their experience:
+    </p>
+    <ul>
+      <li>Block or mute any account from its profile or any post.</li>
+      <li>Mute words, tags, and threads.</li>
+      <li>
+        Apply the labels produced by Bluesky's moderation service and any
+        labelers the user has subscribed to, with automatic hiding of content
+        that violates platform safety rules.
+      </li>
+    </ul>
+
+    <h2>Compliance with law enforcement</h2>
+    <p>
+      Because Nubecita is a client application and does not operate its own
+      backend, social content discovered through the app lives on third-party
+      AT Protocol services (typically <code>bsky.social</code> and connected
+      relays). Reports of illegal material are routed to those operators, who
+      cooperate with the
+      <a href="https://www.missingkids.org/" target="_blank" rel="noopener">
+        National Center for Missing &amp; Exploited Children (NCMEC)
+      </a>
+      and other competent authorities as required by law. Nubecita will
+      cooperate with valid law-enforcement requests directed at the
+      application's maintainers to the extent permitted by applicable law.
+    </p>
+
+    <h2>Contact</h2>
+    <p>
+      For questions about Nubecita's child safety practices, compliance
+      inquiries, or escalations, contact our designated safety point of
+      contact at
+      <a href="mailto:support@nubecita.app">support@nubecita.app</a>.
+    </p>
+  </main>
+</body>
+</html>
