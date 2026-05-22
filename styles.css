@@ -130,27 +130,17 @@ a { color: inherit; text-decoration: none; }
 .hero__meta b { color: #fff; }
 .hero__meta-dot { opacity: 0.6; }
 
-/* Play badge */
+/* Play badge — uses the official Google Play badge asset.
+   Per Google's badge guidelines, do not alter colors, proportions, or wrap
+   it in a custom background. The PNG already includes the required clear
+   space (>= 1/4 of badge height) around the artwork. */
 .play-badge {
-  display: inline-flex; align-items: center; gap: 12px;
-  height: 56px; padding: 0 24px 0 20px; border-radius: 999px;
-  background: #000; color: #fff;
+  display: inline-block; line-height: 0;
   transition: transform 200ms var(--ease-spring-bouncy);
-  border: 1px solid rgba(255,255,255,0.15);
 }
 .play-badge:hover { transform: translateY(-2px); }
-.play-badge__icon {
-  font-size: 28px !important;
-  background: linear-gradient(135deg, var(--sky-60), var(--peach-60), #fff);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  font-variation-settings: 'FILL' 1, 'wght' 700;
-}
-.play-badge__text { display: flex; flex-direction: column; line-height: 1.05; }
-.play-badge__sup { font-size: 11px; font-weight: 500; opacity: 0.8; letter-spacing: 0.04em; }
-.play-badge__big { font-family: var(--font-body); font-weight: 600; font-size: 18px; letter-spacing: -0.005em; }
-.play-badge--lg { height: 64px; padding: 0 28px 0 22px; }
-.play-badge--lg .play-badge__icon { font-size: 32px !important; }
-.play-badge--lg .play-badge__big { font-size: 20px; }
+.play-badge img { display: block; width: auto; height: 80px; }
+.play-badge--lg img { height: 100px; }
 
 /* Hero phones */
 .hero__phones {
