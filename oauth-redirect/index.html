@@ -2,17 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="referrer" content="no-referrer" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Returning to Nubecita…</title>
   <meta name="description" content="Completing sign-in and returning to the Nubecita app." />
   <meta name="theme-color" content="#0A7AFF" />
   <meta name="robots" content="noindex" />
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="/colors_and_type.css" />
-  <link rel="stylesheet" href="/styles.css" />
   <style>
+    /* inline-only: external CSS would @import Google Fonts and leak ?code=… via Referer on older browsers */
     .handoff {
       min-height: 100vh;
       display: flex;
@@ -29,19 +27,19 @@
       margin-bottom: 32px;
     }
     .handoff__title {
-      font-family: "Fraunces", serif;
+      font-family: "Fraunces", ui-serif, Georgia, serif;
       font-weight: 500;
       font-size: clamp(24px, 4vw, 36px);
       line-height: 1.2;
       letter-spacing: -0.01em;
       margin: 0 0 16px;
-      color: var(--md-sys-color-on-surface, #1a1c1e);
+      color: #1a1c1e;
     }
     .handoff__sub {
       font-size: 17px;
       line-height: 1.5;
       margin: 0 0 32px;
-      color: var(--md-sys-color-on-surface-variant, #44474e);
+      color: #44474e;
       max-width: 420px;
     }
     .handoff__cta {
@@ -51,7 +49,7 @@
       height: 52px;
       padding: 0 28px;
       border-radius: 999px;
-      background: var(--sky-50, #0A7AFF);
+      background: #0A7AFF;
       color: #fff;
       font-size: 17px;
       font-weight: 500;
@@ -73,19 +71,38 @@
       </g>
     </svg>
     <h1 class="handoff__title">Returning to Nubecita…</h1>
-    <p class="handoff__sub">If the app doesn't open automatically, tap below to finish signing in.</p>
-    <a id="openApp" class="handoff__cta" href="app.nubecita:/oauth-redirect" hidden>Open Nubecita</a>
+    <p class="handoff__sub">If the app doesn't open in a few seconds, tap below to finish signing in.</p>
+    <!-- href is set by the script; stays "#" + hidden until then so a pre-JS tap can't fire a payload-less intent -->
+    <a id="openApp" class="handoff__cta" href="#" hidden>Open Nubecita</a>
     <noscript>
       <p class="handoff__sub">JavaScript is required to forward the sign-in result to the Nubecita app. Please enable it and reload.</p>
     </noscript>
   </main>
   <script>
     (function () {
-      var target = 'app.nubecita:/oauth-redirect' + window.location.search + window.location.hash;
       var btn = document.getElementById('openApp');
-      btn.setAttribute('href', target);
-      btn.hidden = false;
-      window.location.replace(target);
+      if (!btn) return;
+      try {
+        var search = window.location.search || '';
+        var hash = window.location.hash || '';
+        var target = 'app.nubecita:/oauth-redirect' + search + hash;
+        btn.setAttribute('href', target);
+        // Only auto-forward when this looks like a real OAuth callback. Bare hits / stale
+        // bookmarks fall through to the CTA so we don't re-fire a consumed code.
+        var isCallback = search.indexOf('code=') >= 0 || search.indexOf('error=') >= 0;
+        if (isCallback) {
+          // assign() (not replace()) keeps a history entry so Back returns here if the
+          // browser fails the custom-scheme nav. Surface the CTA via setTimeout so it only
+          // appears when the scripted nav was blocked / intercepted.
+          window.location.assign(target);
+          setTimeout(function () { btn.hidden = false; }, 800);
+        } else {
+          btn.hidden = false;
+        }
+      } catch (e) {
+        // Sandboxed-iframe or similar: don't leave the page frozen.
+        btn.hidden = false;
+      }
     })();
   </script>
 </body>
