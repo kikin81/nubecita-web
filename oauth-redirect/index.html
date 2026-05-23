@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Returning to Nubecita…</title>
+  <meta name="description" content="Completing sign-in and returning to the Nubecita app." />
+  <meta name="theme-color" content="#0A7AFF" />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="/colors_and_type.css" />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .handoff {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 48px 24px;
+      box-sizing: border-box;
+    }
+    .handoff__mark {
+      width: 96px;
+      height: 96px;
+      margin-bottom: 32px;
+    }
+    .handoff__title {
+      font-family: "Fraunces", serif;
+      font-weight: 500;
+      font-size: clamp(24px, 4vw, 36px);
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      margin: 0 0 16px;
+      color: var(--md-sys-color-on-surface, #1a1c1e);
+    }
+    .handoff__sub {
+      font-size: 17px;
+      line-height: 1.5;
+      margin: 0 0 32px;
+      color: var(--md-sys-color-on-surface-variant, #44474e);
+      max-width: 420px;
+    }
+    .handoff__cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 52px;
+      padding: 0 28px;
+      border-radius: 999px;
+      background: var(--sky-50, #0A7AFF);
+      color: #fff;
+      font-size: 17px;
+      font-weight: 500;
+      text-decoration: none;
+    }
+    .handoff__cta:hover { opacity: 0.92; }
+  </style>
+</head>
+<body>
+  <main class="handoff">
+    <svg class="handoff__mark" viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Nubecita cloud">
+      <g transform="translate(22, 32)">
+        <circle cx="18" cy="26" r="14" fill="#0A7AFF"/>
+        <circle cx="34" cy="20" r="18" fill="#0A7AFF"/>
+        <circle cx="52" cy="26" r="14" fill="#0A7AFF"/>
+        <rect x="10" y="30" width="48" height="14" rx="7" fill="#0A7AFF"/>
+        <path d="M 24 22 q 3 -3 6 0" stroke="#FFFFFF" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        <path d="M 38 22 q 3 -3 6 0" stroke="#FFFFFF" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      </g>
+    </svg>
+    <h1 class="handoff__title">Returning to Nubecita…</h1>
+    <p class="handoff__sub">If the app doesn't open automatically, tap below to finish signing in.</p>
+    <a id="openApp" class="handoff__cta" href="app.nubecita:/oauth-redirect" hidden>Open Nubecita</a>
+    <noscript>
+      <p class="handoff__sub">JavaScript is required to forward the sign-in result to the Nubecita app. Please enable it and reload.</p>
+    </noscript>
+  </main>
+  <script>
+    (function () {
+      var target = 'app.nubecita:/oauth-redirect' + window.location.search + window.location.hash;
+      var btn = document.getElementById('openApp');
+      btn.setAttribute('href', target);
+      btn.hidden = false;
+      window.location.replace(target);
+    })();
+  </script>
+</body>
+</html>
