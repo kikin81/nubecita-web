@@ -70,7 +70,7 @@
     <a href="/" class="back">← Back to nubecita.app</a>
     <header>
       <h1>Privacy Policy</h1>
-      <p class="updated">Last updated: May 16, 2026</p>
+      <p class="updated">Last updated: June 1, 2026</p>
     </header>
 
     <p>
@@ -93,6 +93,9 @@
         basic, aggregated usage analytics and crash reporting. Analytics can be turned off in
         the app's Settings.</li>
       <li>Nubecita contains no advertising and no third-party advertising trackers.</li>
+      <li>If you buy the optional Nubecita Pro subscription, payment is handled by Google
+        Play and subscription status by RevenueCat. Your Bluesky identity is never shared
+        with them.</li>
     </ul>
 
     <h2>Information Nubecita stores on your device</h2>
@@ -136,6 +139,36 @@
       <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Privacy Policy</a>.
     </p>
 
+    <h2>Purchases and subscriptions</h2>
+    <p>
+      Nubecita Pro is an optional subscription. The free app collects no purchase
+      data because there is nothing to buy. If you do subscribe:
+    </p>
+    <ul>
+      <li><strong>Google Play</strong> processes the payment. Nubecita never sees or
+        stores your card or payment details.</li>
+      <li><strong>RevenueCat</strong> (a third-party subscription-management service)
+        validates and tracks your subscription status on our behalf. It receives the
+        Google Play purchase token, a <strong>randomly generated, anonymous app-user
+        identifier</strong>, and basic purchase metadata (platform, product id, country,
+        and purchase / renewal / expiry timestamps).</li>
+      <li><strong>Your Bluesky identity is never shared.</strong> Pro is linked only to
+        that anonymous identifier and your Google Play account — not to your Bluesky
+        handle or DID. We do not send your handle, DID, or any post content to
+        RevenueCat or Google Play Billing.</li>
+      <li><strong>Aggregate reporting.</strong> Subscription events (purchase, renewal,
+        cancellation) may be forwarded from RevenueCat to Firebase Analytics to monitor
+        overall subscription health. These are pseudonymous and are not used for
+        advertising.</li>
+    </ul>
+    <p>
+      RevenueCat's handling of this data is governed by its
+      <a href="https://www.revenuecat.com/privacy" target="_blank" rel="noopener">Privacy Policy</a>.
+      You can cancel anytime in Google Play → Subscriptions; to request deletion of the
+      subscription data RevenueCat holds, contact
+      <a href="mailto:privacy@nubecita.app">privacy@nubecita.app</a>.
+    </p>
+
     <h2>Information sent to third parties</h2>
     <p>
       Nubecita communicates with the following services on your behalf:
@@ -149,7 +182,10 @@
         previews). The host of any embedded content will see your IP address when your device
         fetches it, the same way a web browser does.</li>
       <li><strong>Google (Firebase Analytics and Crashlytics)</strong>, as described in the
-        previous section.</li>
+        previous section. If you subscribe to Pro, <strong>Google Play Billing</strong>
+        also processes your payment.</li>
+      <li><strong>RevenueCat</strong>, for subscription management if you buy Nubecita Pro,
+        as described under "Purchases and subscriptions" above.</li>
     </ul>
     <p>
       All network traffic from Nubecita to these services is sent over HTTPS.
@@ -186,6 +222,7 @@
         tokens.</li>
       <li>Clear the app's local data from Android Settings → Apps → Nubecita → Storage at any time.</li>
       <li>Uninstall the app to remove all locally stored data.</li>
+      <li>Manage or cancel a Nubecita Pro subscription anytime in Google Play → Subscriptions.</li>
       <li>To delete your Bluesky account itself, use the controls provided by your PDS (e.g. on
         bsky.social).</li>
     </ul>
