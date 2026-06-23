@@ -129,7 +129,7 @@ so the custom event carries a meaningful title and isn't lumped under generic 40
 
 ## Error handling / edge cases
 
-- No JS / JS error → generic 404 remains (default markup). 
+- No JS / JS error → generic 404 remains (default markup).
 - Path matches a deep-link *prefix* but is malformed (e.g. `/group/join/` with no code, extra
   segments) → regex fails → generic 404.
 - Trailing slash tolerated (`/?$` in each regex).
