@@ -22,7 +22,9 @@ The links affected (all `https://nubecita.app/...`):
 Enhance the existing `404.html` only. No new routes, no server, no build step, no `assetlinks.json`
 change (the domain is already verified; `404.html` is served by GitHub Pages for every unmatched
 path). Out of scope: fetching live group/profile/post details (generic copy only); returning HTTP 200
-(GitHub Pages can't — see Limitations); iOS/desktop native handling (the app is Android-only).
+(GitHub Pages can't — see Limitations). Non-Android visitors are handed off to **Bluesky web**
+(`bsky.app`) for profile/post links (1:1 URL mapping) and to the Play Store for group invites
+(no web equivalent) — see the platform × variant matrix.
 
 ## Approach
 
@@ -51,9 +53,14 @@ Strict allowlist regexes (order matters — post before profile):
 Anything else → `null` → leave the generic 404 untouched. Keeping this a small pure function makes it
 the one piece worth reasoning about carefully (and unit-testable if a harness is ever added).
 
+Input is always `location.pathname` — **not** `location.href`. The query string and hash are dropped
+by design: the app routes on path, so tracking params (`/profile/alice/post/3k?ref=whatsapp`) are
+irrelevant and must not pollute the intent data URI. AT-Protocol DIDs are supported because `[^/]+`
+matches the colons in `did:plc:…` (e.g. `/profile/did:plc:abc/post/3k` classifies as `post`).
+
 ### Open-URL builder (Android)
 
-For a classified path, build the intent-scheme open-or-fallback URL from the **validated** pathname:
+For a classified path, build the intent-scheme open-or-fallback URL from the **validated** `pathname`:
 
 ```
 intent://nubecita.app{pathname}#Intent;scheme=https;package=net.kikin.nubecita;S.browser_fallback_url={ENCODED_PLAY_URL};end
@@ -74,12 +81,38 @@ intent://nubecita.app{pathname}#Intent;scheme=https;package=net.kikin.nubecita;S
   - group → "You're invited to a group" / "Open this invite in the Nubecita app."
   - profile → "View this profile on Nubecita" / "Open it in the Nubecita app."
   - post → "View this post on Nubecita" / "Open it in the Nubecita app."
-- **Android** (`/android/i.test(navigator.userAgent)`): primary button **"Open in Nubecita"** → the
-  intent URL; secondary **"Get it on Google Play"** → the plain Play Store URL.
-- **Non-Android:** no intent button; a line "Nubecita is an Android app." + the **"Get it on Google
-  Play"** link (the store page degrades gracefully off-Android).
-- Fires `gtag('event', 'deep_link_fallback', { link_type: <variant>, installed_hint: <android?> })`
-  (gtag is already loaded on the page) so the frequency of this fallback is measurable.
+
+#### Primary action by platform × variant
+
+Android detection: `/android/i.test(navigator.userAgent)`.
+
+| | **group** | **profile** / **post** |
+|---|---|---|
+| **Android** | "Open in Nubecita" → intent URL; secondary "Get it on Google Play" | "Open in Nubecita" → intent URL; secondary "Get it on Google Play" |
+| **Non-Android** (iOS/desktop) | "Get it on Google Play" + note "Nubecita is an Android app." | **"View on Bluesky Web"** → `https://bsky.app{pathname}`; secondary "Get the Nubecita Android app" |
+
+Rationale for the Bluesky handoff: Nubecita is an AT-Protocol client whose `/profile/{handle}` and
+`/profile/{handle}/post/{rkey}` URLs map **1:1** to `bsky.app`, so a non-Android visitor to a profile
+or post link gets an instant, useful destination instead of a dead "Android-only" message. **Group
+invites have no `bsky.app` web equivalent** (group chat is app-only), so non-Android group invites keep
+the Play Store as the only action. The `bsky.app` URL is built from the validated `pathname` and
+assigned via the anchor's `href` property (never `innerHTML`).
+
+#### In-app webview escape hatch
+
+Some in-app webviews (Instagram, Facebook, Line) silently swallow `intent://` — tapping "Open in
+Nubecita" does nothing. On click of that button, start a `1500ms` timer; if it fires while
+`document.hidden === false` (i.e. we did NOT background into the app), reveal a helper line beneath the
+button: *"Nothing happening? Tap the ⋮ menu and choose 'Open in browser' (Chrome)."* Static copy, hidden
+by default, shown only on the stuck path.
+
+#### Analytics (GA4 404 trap)
+
+Because GitHub Pages serves this with a 404 status, GA4 auto-logs a `page_view` titled "Not found —
+Nubecita", which would bury the custom metric. On a successful classification, set `document.title` to a
+variant title (e.g. `"Nubecita — Group invite"`) **before** firing
+`gtag('event', 'deep_link_fallback', { link_type: <variant>, platform: <android|other>, page_title: document.title })`
+so the custom event carries a meaningful title and isn't lumped under generic 404 reports.
 
 ## Security
 
@@ -90,6 +123,9 @@ intent://nubecita.app{pathname}#Intent;scheme=https;package=net.kikin.nubecita;S
   and the path is inserted into the `intent://` string verbatim (already constrained to safe chars by
   the regex), with the Play Store fallback URL `encodeURIComponent`-encoded. No open-redirect: the
   `package=` pins the target app and the host is hard-coded `nubecita.app`.
+- The Bluesky-web handoff href is `"https://bsky.app" + pathname` (host hard-coded), set via the
+  anchor's `href` **property** (not `innerHTML`), and only for paths already validated as `profile`/`post`
+  by `classifyPath` — so it can't be steered to another origin.
 
 ## Error handling / edge cases
 
