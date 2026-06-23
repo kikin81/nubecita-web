@@ -168,5 +168,84 @@
     <p class="invite__hint" id="inviteHint" hidden>Nothing happening? Tap the &vellip; menu and choose &ldquo;Open in browser&rdquo; (Chrome).</p>
     <a href="/" class="invite__back">&larr; Back to nubecita.app</a>
   </main>
+  <script>
+    // Deep-link web fallback. GitHub Pages serves this 404.html for any unmatched
+    // path; classify the path and, on a match, swap the generic 404 for an
+    // "open in app" landing. All copy is static; the path is never written to the
+    // DOM (XSS-safe). See docs/superpowers/specs/2026-06-23-deep-link-web-fallback-design.md
+    var PLAY_URL = "https://play.google.com/store/apps/details?id=net.kikin.nubecita";
+
+    // Pure + global (console-testable): returns "group" | "profile" | "post" | null.
+    // Post is checked before profile because both start with /profile/.
+    function classifyPath(pathname) {
+      if (/^\/group\/join\/[A-Za-z0-9._-]+\/?$/.test(pathname)) return "group";
+      if (/^\/profile\/[^/]+\/post\/[^/]+\/?$/.test(pathname)) return "post";
+      if (/^\/profile\/[^/]+\/?$/.test(pathname)) return "profile";
+      return null;
+    }
+
+    // Pure: Android intent-scheme open-or-fallback URL for an already-validated path.
+    function intentUrl(pathname) {
+      return "intent://nubecita.app" + pathname +
+        "#Intent;scheme=https;package=net.kikin.nubecita;S.browser_fallback_url=" +
+        encodeURIComponent(PLAY_URL) + ";end";
+    }
+
+    var COPY = {
+      group:   { title: "You're invited to a group", subtitle: "Open this invite in the Nubecita app.", docTitle: "Nubecita — Group invite" },
+      profile: { title: "View this profile on Nubecita", subtitle: "Open it in the Nubecita app.", docTitle: "Nubecita — Profile" },
+      post:    { title: "View this post on Nubecita", subtitle: "Open it in the Nubecita app.", docTitle: "Nubecita — Post" }
+    };
+
+    (function () {
+      var variant = classifyPath(location.pathname);
+      if (!variant) return; // unmatched -> leave the generic 404 in place
+
+      var copy = COPY[variant];
+      document.title = copy.docTitle; // set before gtag so GA4 doesn't bury it under the 404 page_view
+
+      document.getElementById("inviteTitle").textContent = copy.title;
+      document.getElementById("inviteSubtitle").textContent = copy.subtitle;
+
+      var isAndroid = /android/i.test(navigator.userAgent);
+      var openApp = document.getElementById("actOpenApp");
+      var bluesky = document.getElementById("actBluesky");
+      var play = document.getElementById("actPlay");
+      var androidNote = document.getElementById("actAndroidNote");
+      var hint = document.getElementById("inviteHint");
+
+      if (isAndroid) {
+        openApp.href = intentUrl(location.pathname);
+        openApp.hidden = false;
+        play.hidden = false; // secondary "Get it on Google Play"
+        // In-app webviews (Instagram/FB/Line) silently swallow intent://. If we're
+        // still foreground 1.5s after the tap, surface the break-out instruction.
+        openApp.addEventListener("click", function () {
+          setTimeout(function () {
+            if (!document.hidden) hint.hidden = false;
+          }, 1500);
+        });
+      } else if (variant === "profile" || variant === "post") {
+        bluesky.href = "https://bsky.app" + location.pathname; // 1:1 AT-Proto URL mapping; host hard-coded
+        bluesky.hidden = false;
+        play.hidden = false; // secondary: get the Android app
+      } else {
+        // non-Android group invite: no bsky.app equivalent -> Play Store only
+        androidNote.hidden = false;
+        play.hidden = false;
+      }
+
+      document.getElementById("notFound").hidden = true; // hide the generic 404 block
+      document.getElementById("invite").hidden = false;
+
+      if (typeof gtag === "function") {
+        gtag("event", "deep_link_fallback", {
+          link_type: variant,
+          platform: isAndroid ? "android" : "other",
+          page_title: copy.docTitle
+        });
+      }
+    })();
+  </script>
 </body>
 </html>
