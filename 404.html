@@ -159,8 +159,8 @@
     <p class="invite__subtitle" id="inviteSubtitle"></p>
     <div class="invite__actions">
       <a id="actOpenApp" class="btn btn--filled" href="https://play.google.com/store/apps/details?id=net.kikin.nubecita" rel="noopener" hidden>Open in Nubecita</a>
-      <a id="actBluesky" class="btn btn--filled" href="https://bsky.app" rel="noopener" hidden>View on Bluesky Web</a>
-      <a id="actPlay" class="play-badge" href="https://play.google.com/store/apps/details?id=net.kikin.nubecita" rel="noopener" hidden>
+      <a id="actBluesky" class="btn btn--filled" href="https://bsky.app" target="_blank" rel="noopener" hidden>View on Bluesky Web</a>
+      <a id="actPlay" class="play-badge" href="https://play.google.com/store/apps/details?id=net.kikin.nubecita" target="_blank" rel="noopener" hidden>
         <img src="/assets/google-play-badge.png" alt="Get it on Google Play" width="207" height="80">
       </a>
       <p id="actAndroidNote" class="invite__note" hidden>Nubecita is an Android app.</p>
@@ -198,7 +198,10 @@
     };
 
     (function () {
-      var variant = classifyPath(location.pathname);
+      // Normalize a trailing slash so /profile/alice/ hands off the same clean
+      // path (/profile/alice) to the app intent + bsky.app as /profile/alice does.
+      var pathname = location.pathname.replace(/\/$/, "");
+      var variant = classifyPath(pathname);
       if (!variant) return; // unmatched -> leave the generic 404 in place
 
       var copy = COPY[variant];
@@ -215,7 +218,7 @@
       var hint = document.getElementById("inviteHint");
 
       if (isAndroid) {
-        openApp.href = intentUrl(location.pathname);
+        openApp.href = intentUrl(pathname);
         openApp.hidden = false;
         play.hidden = false; // secondary "Get it on Google Play"
         // In-app webviews (Instagram/FB/Line) silently swallow intent://. If we're
@@ -226,7 +229,7 @@
           }, 1500);
         });
       } else if (variant === "profile" || variant === "post") {
-        bluesky.href = "https://bsky.app" + location.pathname; // 1:1 AT-Proto URL mapping; host hard-coded
+        bluesky.href = "https://bsky.app" + pathname; // 1:1 AT-Proto URL mapping; host hard-coded
         bluesky.hidden = false;
         play.hidden = false; // secondary: get the Android app
       } else {
