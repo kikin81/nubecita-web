@@ -23,6 +23,9 @@
   <link rel="stylesheet" href="/colors_and_type.css" />
   <link rel="stylesheet" href="/styles.css" />
   <style>
+    /* An author display rule beats the browser's own [hidden] rule, so without
+       this .not-found stays on screen and pushes the invite below the fold. */
+    [hidden] { display: none !important; }
     .not-found {
       min-height: 100vh;
       display: flex;
