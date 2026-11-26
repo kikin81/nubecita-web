@@ -53,6 +53,7 @@ BUDGET_AMOUNT="5USD"
 
 RUNTIME_SA="${RUNTIME_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 DEPLOY_SA="${DEPLOY_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
+APPSPOT_SA="${PROJECT_ID}@appspot.gserviceaccount.com"
 
 DRY_RUN=false
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
@@ -194,6 +195,28 @@ for role in "${DEPLOY_ROLES[@]}"; do
 done
 # Deploying a function that runs as the runtime identity requires acting as it.
 run gcloud iam service-accounts add-iam-policy-binding "$RUNTIME_SA" --project "$PROJECT_ID" \
+  --member "serviceAccount:${DEPLOY_SA}" --role roles/iam.serviceAccountUser >/dev/null
+
+# firebase-tools refuses to deploy functions unless the deployer may act as the
+# project's default App Engine service account, whichever identity the
+# function actually runs as. Google creates that account with the project-wide
+# Editor role. Nothing in this project runs as it (no App Engine app, and the
+# function has its own identity), so Editor is removed first: the deployer
+# then gets to "act as" an account that can do nothing.
+#
+# To undo: gcloud projects add-iam-policy-binding nubecita-2a4c1 \
+#   --member serviceAccount:nubecita-2a4c1@appspot.gserviceaccount.com --role roles/editor
+say "Default App Engine service account ${APPSPOT_SA}"
+if query gcloud projects get-iam-policy "$PROJECT_ID" --flatten 'bindings[].members' \
+  --filter "bindings.role=roles/editor AND bindings.members=serviceAccount:${APPSPOT_SA}" \
+  --format 'value(bindings.role)' | grep -qx roles/editor; then
+  run gcloud projects remove-iam-policy-binding "$PROJECT_ID" \
+    --member "serviceAccount:${APPSPOT_SA}" --role roles/editor --condition None >/dev/null
+  echo "   removed roles/editor"
+else
+  echo "   holds no Editor role"
+fi
+run gcloud iam service-accounts add-iam-policy-binding "$APPSPOT_SA" --project "$PROJECT_ID" \
   --member "serviceAccount:${DEPLOY_SA}" --role roles/iam.serviceAccountUser >/dev/null
 
 say "Workload Identity Federation (${REPO}@${DEPLOY_BRANCH} only)"
