@@ -19,8 +19,19 @@ export interface MediatorRequest {
   headers: Record<string, string | undefined>;
   /** Raw `application/x-www-form-urlencoded` body. */
   body: string;
-  /** The caller's address, for rate limiting only. Never logged. */
+  /**
+   * The address the caller claims to come from: the first forwarded hop. A
+   * caller reaching the service directly can set this to anything. For rate
+   * limiting only; never logged.
+   */
   callerAddress?: string;
+  /**
+   * The address that actually connected to the platform: the last forwarded
+   * hop, which the platform appends and a caller cannot forge. Shared by many
+   * users when it is a proxy in front of the service. For rate limiting only;
+   * never logged.
+   */
+  connectingAddress?: string;
 }
 
 export interface MediatorDeps {
@@ -30,7 +41,10 @@ export interface MediatorDeps {
   resolveIssuer: ResolveIssuer;
   readClientAuthMethod: ReadClientAuthMethod;
   verifyAttestation: VerifyAttestation;
+  /** Per claimed caller address: the tight, per-user limit. */
   allowSignInStart: RateLimit;
+  /** Per connecting address: a looser ceiling that forging the claimed address cannot escape. */
+  allowSignInStartFromConnection: RateLimit;
   settings: ReadSettings;
   log: LogSink;
   /** Milliseconds since the epoch. */
@@ -118,7 +132,15 @@ async function mediate(
   if (!key.ok) return refuse(key.reason);
   entry.kid = key.kid;
 
-  if (kind === "par" && !deps.allowSignInStart(request.callerAddress ?? "unknown")) return refuse("rate_limited");
+  if (kind === "par") {
+    // The caller's own limit first, and a request it refuses is not counted
+    // against the connecting address. Through Hosting that address is an edge
+    // shared by many users, so one client hammering away past its own limit
+    // must not use up everyone's ceiling. A caller that forges a new address
+    // each time passes the first check and is counted by the second.
+    if (!deps.allowSignInStart(request.callerAddress ?? "unknown")) return refuse("rate_limited");
+    if (!deps.allowSignInStartFromConnection(request.connectingAddress ?? "unknown")) return refuse("rate_limited");
+  }
 
   const verdict: AttestationVerdict = await deps.verifyAttestation(request.headers["x-firebase-appcheck"]);
   entry.attestation = verdict;

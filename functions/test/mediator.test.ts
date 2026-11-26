@@ -48,6 +48,7 @@ function harness(
     settings?: Partial<Settings>;
     attestation?: AttestationVerdict;
     signInLimit?: number;
+    connectionLimit?: number;
   } = {},
 ) {
   const upstreamRequests: OutboundRequest[] = [];
@@ -88,6 +89,7 @@ function harness(
     readClientAuthMethod: createClientAuthMethodReader(send, now),
     verifyAttestation: async () => options.attestation ?? "valid",
     allowSignInStart: createRateLimit(options.signInLimit ?? 100, 60_000, now),
+    allowSignInStartFromConnection: createRateLimit(options.connectionLimit ?? 1_000, 60_000, now),
     settings: () => ({
       bypass: false,
       enforceSignInAttestation: false,
@@ -559,6 +561,52 @@ describe("rate limiting", () => {
     expect(statuses).toEqual([201, 201, 429]);
     expect(other.status).toBe(201);
     expect(h.upstreamRequests).toHaveLength(3);
+  });
+
+  it("cannot be escaped by claiming a new address each time: the connecting address has its own ceiling", async () => {
+    const ok: Upstream = () => json(201, {request_uri: "urn:x"});
+    const h = harness({upstream: [ok, ok, ok], signInLimit: 1, connectionLimit: 3});
+
+    const statuses = [];
+    for (let i = 0; i < 5; i++) {
+      // A direct caller forges the first X-Forwarded-For entry; the last one is
+      // appended by the platform and is the same for all five.
+      statuses.push((await h.handle({...par(), callerAddress: `203.0.113.${i}`, connectingAddress: "198.51.100.1"})).status);
+    }
+
+    expect(statuses).toEqual([201, 201, 201, 429, 429]);
+    expect(h.upstreamRequests).toHaveLength(3);
+  });
+
+  it("does not let one caller's burst count against others behind the same connecting address", async () => {
+    const ok: Upstream = () => json(201, {request_uri: "urn:x"});
+    const h = harness({upstream: [ok, ok], signInLimit: 1, connectionLimit: 100});
+    const edge = "198.51.100.1";
+
+    const first = await h.handle({...par(), callerAddress: "203.0.113.1", connectingAddress: edge});
+    const again = await h.handle({...par(), callerAddress: "203.0.113.1", connectingAddress: edge});
+    const someoneElse = await h.handle({...par(), callerAddress: "203.0.113.2", connectingAddress: edge});
+
+    expect([first.status, again.status, someoneElse.status]).toEqual([201, 429, 201]);
+  });
+
+  it("does not let one caller hammering past its own limit use up the connecting address's ceiling", async () => {
+    const ok: Upstream = () => json(201, {request_uri: "urn:x"});
+    const h = harness({upstream: [ok, ok, ok], signInLimit: 1, connectionLimit: 3});
+    // Through Hosting the connecting address is an edge shared by many users.
+    const edge = "198.51.100.1";
+
+    const hammering = [];
+    for (let i = 0; i < 10; i++) {
+      hammering.push((await h.handle({...par(), callerAddress: "203.0.113.1", connectingAddress: edge})).status);
+    }
+    const others = [
+      (await h.handle({...par(), callerAddress: "203.0.113.2", connectingAddress: edge})).status,
+      (await h.handle({...par(), callerAddress: "203.0.113.3", connectingAddress: edge})).status,
+    ];
+
+    expect(hammering).toEqual([201, ...Array<number>(9).fill(429)]);
+    expect(others).toEqual([201, 201]);
   });
 
   it("does not limit refreshes", async () => {
