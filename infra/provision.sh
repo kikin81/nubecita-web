@@ -25,6 +25,10 @@
 
 set -euo pipefail
 
+# Never stop to ask. With an API still disabled, gcloud would otherwise wait
+# for a "enable it and retry?" answer, even during --dry-run.
+export CLOUDSDK_CORE_DISABLE_PROMPTS=1
+
 PROJECT_ID="nubecita-2a4c1"
 REPO="kikin81/nubecita-web"
 DEPLOY_BRANCH="main"
@@ -51,7 +55,8 @@ DRY_RUN=false
 say() { printf '\n==> %s\n' "$*"; }
 run() {
   if $DRY_RUN; then
-    printf '   [dry-run] %s\n' "$*"
+    # To stderr, so a caller that silences a command's output still sees it.
+    printf '   [dry-run] %s\n' "$*" >&2
   else
     "$@"
   fi
@@ -73,6 +78,7 @@ run gcloud services enable --project "$PROJECT_ID" \
   sts.googleapis.com \
   firebasehosting.googleapis.com \
   firebaseextensions.googleapis.com \
+  cloudbilling.googleapis.com \
   billingbudgets.googleapis.com
 
 say "KMS key ring ${KMS_KEYRING} (${KMS_LOCATION})"
@@ -160,15 +166,22 @@ run gcloud iam service-accounts add-iam-policy-binding "$DEPLOY_SA" --project "$
   --role roles/iam.workloadIdentityUser >/dev/null
 
 say "Budget alert (${BUDGET_AMOUNT})"
-BILLING_ACCOUNT="$(gcloud billing projects describe "$PROJECT_ID" --format='value(billingAccountName)' | sed 's#billingAccounts/##')"
+# --billing-project: bill these API calls to this project rather than to
+# whatever quota project the local gcloud defaults to.
+BILLING_ACCOUNT="$(gcloud billing projects describe "$PROJECT_ID" --billing-project "$PROJECT_ID" \
+  --format='value(billingAccountName)' 2>/dev/null | sed 's#billingAccounts/##' || true)"
 if [[ -z "$BILLING_ACCOUNT" ]]; then
-  echo "   no billing account linked: upgrade the project to Blaze first" >&2
-  exit 1
-fi
-if gcloud billing budgets list --billing-account "$BILLING_ACCOUNT" --format='value(displayName)' | grep -qx "$BUDGET_NAME"; then
+  if $DRY_RUN; then
+    echo "   [dry-run] billing account not readable until the APIs above are enabled; would create the budget"
+  else
+    echo "   no billing account readable: is the project on the Blaze plan?" >&2
+    exit 1
+  fi
+elif gcloud billing budgets list --billing-account "$BILLING_ACCOUNT" --billing-project "$PROJECT_ID" \
+  --format='value(displayName)' 2>/dev/null | grep -qx "$BUDGET_NAME"; then
   echo "   exists"
 else
-  run gcloud billing budgets create --billing-account "$BILLING_ACCOUNT" \
+  run gcloud billing budgets create --billing-account "$BILLING_ACCOUNT" --billing-project "$PROJECT_ID" \
     --display-name "$BUDGET_NAME" \
     --budget-amount "$BUDGET_AMOUNT" \
     --filter-projects "projects/${PROJECT_NUMBER}" \
