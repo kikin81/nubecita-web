@@ -20,7 +20,15 @@ export interface RequestLog {
   latencyMs: number;
   kid?: string;
   attestation: AttestationVerdict | "not_checked";
+  /** True when the answer came from the replay store instead of the authorization server. */
   replayed: boolean;
+  /**
+   * Set only when the replay store let a refresh down: `unavailable` when it
+   * could not be consulted, so the refresh was not forwarded, and
+   * `write_failed` when the refresh went ahead but its outcome could not be
+   * recorded.
+   */
+  replayStore?: "unavailable" | "write_failed";
 }
 
 export type LogSink = (entry: RequestLog) => void;
