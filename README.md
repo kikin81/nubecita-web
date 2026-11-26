@@ -134,9 +134,14 @@ a refresh down. Both of those feed the `OAuth backend: replay store failures`
 alert.
 
 **The database must exist before this code is deployed.** If the backend cannot
-consult the store it refuses refreshes (`mediator_internal`, not forwarded,
-retryable) rather than forward a token that may already be spent. Run
-`infra/provision.sh` first, then check that a client is refused:
+consult the store it does not forward a refresh, because the token may already
+be spent. It answers `mediator_bypass` ("not forwarded, use the direct path")
+and logs `replayStore: "unavailable"`. The app goes direct only with a refresh
+token whose earlier attempts all provably went nowhere, and keeps retrying the
+backend with one that may be spent. So while the client is public a store
+outage delays only the retries it could have hurt; once the client is
+confidential the direct path cannot refresh and every refresh waits for the
+store. Run `infra/provision.sh` first, then check that a client is refused:
 
 ```sh
 curl -s -o /dev/null -w '%{http_code}\n' \

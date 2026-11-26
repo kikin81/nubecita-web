@@ -56,22 +56,23 @@ describe("when the replay store fails", () => {
   });
 
   // Unable to tell whether the token is spent or in flight, the backend must
-  // not forward it: a retry is cheap and a replayed token is not.
+  // not forward it. It answers "go direct": the app takes that path only for
+  // a refresh token none of whose attempts can have reached the server, and
+  // keeps retrying here for one that may be spent.
   it.each([
     ["look up the refresh token", ["read"]],
     ["look up what issued it", ["issuedBy"]],
     ["claim it", ["claim"]],
-  ] as const)("refuses a refresh, without forwarding it, when it cannot %s", async (_label, operations) => {
+  ] as const)("answers 'go direct', without forwarding, when it cannot %s", async (_label, operations) => {
     for (const how of ["throws", "hangs"] as const) {
       const h = harness({replayStore: failing([...operations], how), storeTimeoutMs: 25, upstream: [() => json(200, tokens())]});
 
       const response = await h.handle(refresh());
 
-      expect(response.status).toBe(500);
       expect(response.headers[ORIGIN_HEADER]).toBe("mediator");
-      expect(JSON.parse(response.body)).toEqual({error: "mediator_internal", forwarded: false});
+      expect(JSON.parse(response.body)).toEqual({error: "mediator_bypass", forwarded: false});
       expect(h.upstreamRequests).toHaveLength(0);
-      expect(h.logs[0]).toMatchObject({reason: "internal", forwarded: false, replayStore: "unavailable"});
+      expect(h.logs[0]).toMatchObject({reason: "bypass", forwarded: false, replayStore: "unavailable"});
     }
   });
 

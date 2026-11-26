@@ -201,9 +201,17 @@ async function mediate(
     } catch {
       // Without the store there is no telling whether this refresh token is
       // already spent or being forwarded right now, and forwarding it in
-      // either case can delete the session. Refusing costs a retry.
+      // either case can delete the session. So it is not forwarded from here.
+      //
+      // The answer is "use the direct path", not an error, because the app
+      // already knows which of its refresh tokens that is safe for: it takes
+      // the direct path only for one whose earlier attempts all provably went
+      // nowhere, and keeps retrying here for one that may be spent. A store
+      // outage therefore stalls only the refreshes it could have hurt, while
+      // the client is public. Once it is confidential the direct path fails
+      // harmlessly and every refresh waits for the store.
       entry.replayStore = "unavailable";
-      return refuse("internal");
+      return refuse("bypass");
     }
 
     if (stored !== undefined) {
@@ -264,8 +272,9 @@ async function mediate(
     try {
       claim = await within(store.claim(refresh.id, deps.now()), deps.storeTimeoutMs ?? STORE_TIMEOUT_MS);
     } catch {
+      // As above: not forwarded, and the app decides whether direct is safe.
       entry.replayStore = "unavailable";
-      return refuse("internal");
+      return refuse("bypass");
     }
     // Another attempt with this refresh token may have reached the
     // authorization server, so the app must not treat the token as unspent.
