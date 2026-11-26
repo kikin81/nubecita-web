@@ -18,6 +18,7 @@
 #     Workload Identity Federation, only from the main branch of this repo.
 #     No service-account key is ever created.
 #   - a budget alert
+#   - log-based metrics and alert policies for the backend
 #   - the GitHub "production" environment (approval required) and the two
 #     repository variables the deploy workflow reads
 #
@@ -79,7 +80,9 @@ run gcloud services enable --project "$PROJECT_ID" \
   firebasehosting.googleapis.com \
   firebaseextensions.googleapis.com \
   cloudbilling.googleapis.com \
-  billingbudgets.googleapis.com
+  billingbudgets.googleapis.com \
+  logging.googleapis.com \
+  monitoring.googleapis.com
 
 say "KMS key ring ${KMS_KEYRING} (${KMS_LOCATION})"
 if exists gcloud kms keyrings describe "$KMS_KEYRING" --location "$KMS_LOCATION" --project "$PROJECT_ID"; then
@@ -189,6 +192,77 @@ else
     --threshold-rule percent=0.9 \
     --threshold-rule percent=1.0
 fi
+
+say "Log-based metrics"
+# The backend writes one structured line per request (functions/src/log.ts).
+# Each metric counts lines matching a filter on those fields.
+BASE_FILTER='resource.type="cloud_run_revision" AND jsonPayload.message="oauth_mediator_request"'
+metric() { # name, description, extra filter
+  if exists gcloud logging metrics describe "$1" --project "$PROJECT_ID"; then
+    echo "   $1 exists"
+  else
+    run gcloud logging metrics create "$1" --project "$PROJECT_ID" \
+      --description "$2" --log-filter "${BASE_FILTER} AND $3"
+  fi
+}
+metric oauth_mediator_backend_errors \
+  "Requests the backend failed itself (5xx it produced, not relayed)" \
+  'jsonPayload.origin="mediator" AND jsonPayload.status>=500'
+metric oauth_mediator_relayed_invalid_grant \
+  "invalid_grant answers relayed from authorization servers: each one ends a session" \
+  'jsonPayload.upstreamError="invalid_grant"'
+metric oauth_mediator_signin_attestation_failures \
+  "Sign-in requests without a valid App Check token" \
+  '(jsonPayload.kind="par" OR jsonPayload.kind="code_exchange") AND jsonPayload.attestation!="valid"'
+
+say "Alert policies"
+CHANNELS="$(gcloud beta monitoring channels list --project "$PROJECT_ID" --format='value(name)' 2>/dev/null || true)"
+if [[ -z "$CHANNELS" ]]; then
+  echo "   no notification channel in this project yet: policies will be created but notify no one."
+  echo "   Add one in Cloud Monitoring -> Alerting -> Edit notification channels, then re-run this script."
+fi
+CHANNELS_JSON="$(printf '%s\n' "$CHANNELS" | sed '/^$/d' | sed 's/.*/"&"/' | paste -sd, -)"
+EXISTING_POLICIES="$(gcloud alpha monitoring policies list --project "$PROJECT_ID" --format='value(displayName)' 2>/dev/null || true)"
+policy() { # display name, metric, threshold, window seconds, documentation
+  if grep -qxF "$1" <<<"$EXISTING_POLICIES"; then
+    echo "   $1 exists"
+    return
+  fi
+  local file
+  file="$(mktemp)"
+  cat >"$file" <<JSON
+{
+  "displayName": "$1",
+  "combiner": "OR",
+  "documentation": {"content": "$5", "mimeType": "text/markdown"},
+  "notificationChannels": [${CHANNELS_JSON}],
+  "conditions": [
+    {
+      "displayName": "$1",
+      "conditionThreshold": {
+        "filter": "metric.type=\"logging.googleapis.com/user/$2\" AND resource.type=\"cloud_run_revision\"",
+        "aggregations": [
+          {"alignmentPeriod": "${4}s", "perSeriesAligner": "ALIGN_SUM", "crossSeriesReducer": "REDUCE_SUM"}
+        ],
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": $3,
+        "duration": "0s",
+        "trigger": {"count": 1}
+      }
+    }
+  ]
+}
+JSON
+  run gcloud alpha monitoring policies create --project "$PROJECT_ID" --policy-from-file "$file" >/dev/null
+  rm -f "$file"
+}
+# Thresholds are starting points; tune them once real traffic shows the baseline.
+policy "OAuth backend: errors" oauth_mediator_backend_errors 5 300 \
+  "The backend itself is failing requests. Apps keep their sessions but cannot refresh. While the production client is still public, turning on bypass mode (MEDIATOR_BYPASS=true) sends apps to the direct path."
+policy "OAuth backend: relayed invalid_grant spike" oauth_mediator_relayed_invalid_grant 20 600 \
+  "Authorization servers are ending sessions at an unusual rate. Check for a reused jti, a wrong signing key, or a client metadata change."
+policy "OAuth backend: sign-in attestation failures" oauth_mediator_signin_attestation_failures 20 600 \
+  "Many sign-ins lack a valid App Check token. Check Play Integrity quota and the App Check console before turning enforcement on."
 
 say "GitHub environment and variables"
 REVIEWER_ID="$(gh api user --jq .id)"

@@ -8,6 +8,7 @@ export const ORIGIN_HEADER = "Nubecita-Mediator-Origin";
 /** Why the backend answered a request itself instead of relaying an answer. */
 export const MEDIATOR_REASONS = [
   "not_found",
+  "bad_request",
   "bypass",
   "attestation_required",
   "unknown_client",
@@ -49,4 +50,36 @@ export function mediatorError(status: number, reason: MediatorReason, forwarded:
     },
     body: JSON.stringify({error: `mediator_${reason}`, forwarded}),
   };
+}
+
+/** Headers that tell the app which key signed for it and how the client is registered. */
+export const KID_HEADER = "Nubecita-Client-Auth-Kid";
+export const AUTH_METHOD_HEADER = "Nubecita-Client-Auth-Method";
+export const UPSTREAM_DATE_HEADER = "Nubecita-Upstream-Date";
+
+/**
+ * The authorization server's own answer, passed back unchanged and marked as
+ * such. Status and body are never altered.
+ */
+export function relayed(
+  upstream: {status: number; headers: Record<string, string>; body: string},
+  kid: string,
+  authMethod: string | undefined,
+): MediatorResponse {
+  const headers: Record<string, string> = {
+    [ORIGIN_HEADER]: "upstream",
+    [KID_HEADER]: kid,
+    "Cache-Control": "no-store",
+  };
+  if (authMethod !== undefined) headers[AUTH_METHOD_HEADER] = authMethod;
+  const copy = (from: string, to: string): void => {
+    const value = upstream.headers[from];
+    if (value !== undefined) headers[to] = value;
+  };
+  copy("content-type", "Content-Type");
+  copy("dpop-nonce", "DPoP-Nonce");
+  copy("www-authenticate", "WWW-Authenticate");
+  // The app corrects its clock from the authorization server's time, not ours.
+  copy("date", UPSTREAM_DATE_HEADER);
+  return {status: upstream.status, headers, body: upstream.body};
 }

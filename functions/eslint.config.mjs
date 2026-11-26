@@ -11,4 +11,9 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": ["error", {argsIgnorePattern: "^_"}],
     },
   },
+  {
+    // Tests index into arrays they have just asserted the length of.
+    files: ["test/**"],
+    rules: {"@typescript-eslint/no-non-null-assertion": "off"},
+  },
 );

@@ -69,6 +69,23 @@ npm run serve     # local emulator on http://127.0.0.1:5001
 - Deploys run from `main` only, through the `Deploy backend` workflow, and wait
   for approval in the `production` environment.
 
+The backend mediates exactly three paths, all `POST`: `/par`, `/token`
+(authorization-code and refresh grants) and `/revoke`. Every response carries
+`Nubecita-Mediator-Origin`: `upstream` when it is the authorization server's own
+answer relayed unchanged, `mediator` when the backend produced it. A
+backend-produced error is `{"error": "mediator_<reason>", "forwarded": false |
+true | "unknown"}` and is never an OAuth error.
+
+Three switches can be flipped on the running service without a deploy, by
+updating its environment (`gcloud run services update oauthmediator --region
+us-central1 --update-env-vars NAME=true`); the next deploy resets them:
+
+| Variable | Effect |
+| --- | --- |
+| `MEDIATOR_BYPASS` | Answer every request "not forwarded, use the direct path" and contact no authorization server. Only useful while the production client is still public. |
+| `MEDIATOR_ENFORCE_SIGN_IN_ATTESTATION` | Refuse sign-ins without a valid App Check token. Off means observe only. |
+| `MEDIATOR_STRICT_REFRESH_ATTESTATION` | Also refuse refreshes and sign-outs without one. Leave off: an attestation outage would otherwise stall signed-in users. |
+
 GitHub Pages serves this repository's root, so these source files are also
 reachable under `nubecita.app`. That is harmless: the repository is public and
 contains no secrets.
