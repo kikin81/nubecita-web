@@ -116,6 +116,7 @@ exists() {
 }
 
 PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
+BUILD_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 
 say "APIs"
 run gcloud services enable --project "$PROJECT_ID" \
@@ -217,6 +218,31 @@ else
   echo "   holds no Editor role"
 fi
 run gcloud iam service-accounts add-iam-policy-binding "$APPSPOT_SA" --project "$PROJECT_ID" \
+  --member "serviceAccount:${DEPLOY_SA}" --role roles/iam.serviceAccountUser >/dev/null
+
+# 2nd-gen functions are BUILT as the Compute Engine default service account,
+# and creating one requires acting as that account too. It is also created
+# with project-wide Editor and is otherwise unused here (the Compute Engine
+# API is off). It has to keep the ability to build, so Editor is swapped for
+# the Cloud Build builder role: enough to build and store the function's
+# image, and nothing else. The builder role is added before Editor is removed,
+# so the account is never left unable to build.
+#
+# To undo: gcloud projects add-iam-policy-binding nubecita-2a4c1 \
+#   --member serviceAccount:<project-number>-compute@developer.gserviceaccount.com --role roles/editor
+say "Build service account ${BUILD_SA}"
+run gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+  --member "serviceAccount:${BUILD_SA}" --role roles/cloudbuild.builds.builder --condition None >/dev/null
+if query gcloud projects get-iam-policy "$PROJECT_ID" --flatten 'bindings[].members' \
+  --filter "bindings.role=roles/editor AND bindings.members=serviceAccount:${BUILD_SA}" \
+  --format 'value(bindings.role)' | grep -qx roles/editor; then
+  run gcloud projects remove-iam-policy-binding "$PROJECT_ID" \
+    --member "serviceAccount:${BUILD_SA}" --role roles/editor --condition None >/dev/null
+  echo "   swapped roles/editor for roles/cloudbuild.builds.builder"
+else
+  echo "   holds no Editor role"
+fi
+run gcloud iam service-accounts add-iam-policy-binding "$BUILD_SA" --project "$PROJECT_ID" \
   --member "serviceAccount:${DEPLOY_SA}" --role roles/iam.serviceAccountUser >/dev/null
 
 say "Workload Identity Federation (${REPO}@${DEPLOY_BRANCH} only)"
