@@ -1,0 +1,8 @@
+# Changes to the OAuth backend, its infrastructure, or the published client
+# metadata need the owner's review: a mistake in any of them can sign users out.
+/functions/ @kikin81
+/infra/ @kikin81
+/oauth/ @kikin81
+/firebase.json @kikin81
+/.firebaserc @kikin81
+/.github/ @kikin81

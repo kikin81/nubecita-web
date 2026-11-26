@@ -18,6 +18,9 @@ repository via GitHub Pages.
 ├── oauth/client-metadata.json    AT Protocol OAuth client manifest
 ├── oauth/client-metadata-*.json  Test and rehearsal clients (never used by production builds)
 ├── oauth/validate.mjs            Checks every client manifest against authorization-server rules
+├── functions/                    OAuth token-mediating backend (Firebase Functions)
+├── infra/                        Provisioning scripts for the backend
+├── firebase.json                 Function + Hosting rewrite (auth.nubecita.app)
 ├── assets/                       Logos, OG image, illustrations
 └── .github/workflows/ci.yml      Link check + HTML validation + pre-commit
 ```
@@ -34,6 +37,41 @@ npx serve .
 ```
 
 Then open <http://localhost:8000>.
+
+## OAuth backend
+
+`functions/` is a small Firebase function, reached at
+<https://auth.nubecita.app>, that lets the Nubecita app act as a
+*confidential* AT Protocol OAuth client. The app sends it the four OAuth
+requests that need client authentication (pushed authorization request, code
+exchange, refresh, revocation); it adds a signed client assertion and relays
+the request to the user's authorization server. It never sees a device's DPoP
+key, so it cannot use any token it handles. All other traffic goes straight
+from the app to the PDS.
+
+The client signing keys live in Cloud KMS and cannot be exported. This
+repository holds only public keys and key ids. Design and rationale:
+[`openspec/changes/add-confidential-oauth-client`](https://github.com/kikin81/nubecita/tree/main/openspec/changes/add-confidential-oauth-client)
+in the app repository.
+
+```sh
+cd functions
+npm ci
+npm test          # unit tests
+npm run lint
+npm run serve     # local emulator on http://127.0.0.1:5001
+```
+
+- `infra/provision.sh` creates the keys, service accounts, federation and
+  budget alert. It is idempotent; `--dry-run` prints what it would do.
+- `infra/export-jwk.sh <key> <version> <kid>` prints a key's public JWK for a
+  client metadata file.
+- Deploys run from `main` only, through the `Deploy backend` workflow, and wait
+  for approval in the `production` environment.
+
+GitHub Pages serves this repository's root, so these source files are also
+reachable under `nubecita.app`. That is harmless: the repository is public and
+contains no secrets.
 
 ## Contributing
 
