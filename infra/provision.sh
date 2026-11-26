@@ -196,7 +196,7 @@ for role in "${DEPLOY_ROLES[@]}"; do
 done
 # Deploying a function that runs as the runtime identity requires acting as it.
 run gcloud iam service-accounts add-iam-policy-binding "$RUNTIME_SA" --project "$PROJECT_ID" \
-  --member "serviceAccount:${DEPLOY_SA}" --role roles/iam.serviceAccountUser >/dev/null
+  --member "serviceAccount:${DEPLOY_SA}" --role roles/iam.serviceAccountUser --condition None >/dev/null
 
 # firebase-tools refuses to deploy functions unless the deployer may act as the
 # project's default App Engine service account, whichever identity the
@@ -218,7 +218,7 @@ else
   echo "   holds no Editor role"
 fi
 run gcloud iam service-accounts add-iam-policy-binding "$APPSPOT_SA" --project "$PROJECT_ID" \
-  --member "serviceAccount:${DEPLOY_SA}" --role roles/iam.serviceAccountUser >/dev/null
+  --member "serviceAccount:${DEPLOY_SA}" --role roles/iam.serviceAccountUser --condition None >/dev/null
 
 # 2nd-gen functions are BUILT as the Compute Engine default service account,
 # and creating one requires acting as that account too. It is also created
@@ -243,7 +243,7 @@ else
   echo "   holds no Editor role"
 fi
 run gcloud iam service-accounts add-iam-policy-binding "$BUILD_SA" --project "$PROJECT_ID" \
-  --member "serviceAccount:${DEPLOY_SA}" --role roles/iam.serviceAccountUser >/dev/null
+  --member "serviceAccount:${DEPLOY_SA}" --role roles/iam.serviceAccountUser --condition None >/dev/null
 
 say "Workload Identity Federation (${REPO}@${DEPLOY_BRANCH} only)"
 if exists gcloud iam workload-identity-pools describe "$WIF_POOL" --location global --project "$PROJECT_ID"; then
@@ -265,7 +265,7 @@ fi
 WIF_POOL_RESOURCE="projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${WIF_POOL}"
 run gcloud iam service-accounts add-iam-policy-binding "$DEPLOY_SA" --project "$PROJECT_ID" \
   --member "principalSet://iam.googleapis.com/${WIF_POOL_RESOURCE}/attribute.repository/${REPO}" \
-  --role roles/iam.workloadIdentityUser >/dev/null
+  --role roles/iam.workloadIdentityUser --condition None >/dev/null
 
 say "Budget alert (${BUDGET_AMOUNT})"
 # --billing-project: bill these API calls to this project rather than to
