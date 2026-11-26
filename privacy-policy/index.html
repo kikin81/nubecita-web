@@ -80,7 +80,7 @@
     <a href="/" class="back">← Back to nubecita.app</a>
     <header>
       <h1>Privacy Policy</h1>
-      <p class="updated">Last updated: June 1, 2026</p>
+      <p class="updated">Last updated: November 26, 2026</p>
     </header>
 
     <p>
@@ -93,10 +93,14 @@
 
     <h2>The short version</h2>
     <ul>
-      <li>Nubecita does <strong>not</strong> operate a server that stores your personal data.</li>
+      <li>Nubecita operates one small server, a <strong>sign-in relay</strong> that keeps you
+        signed in for longer. It has no account database and never sees what you read or
+        post. Details are under "The sign-in relay" below.</li>
       <li>Nubecita signs you into Bluesky using AT Protocol OAuth. Your credentials are entered
         on Bluesky's own login screen — Nubecita never sees your password.</li>
-      <li>Authentication tokens are stored encrypted on your device only.</li>
+      <li>Authentication tokens are stored encrypted on your device. They pass through the
+        sign-in relay when you sign in and when your session is renewed, but they only work
+        together with a key that never leaves your device, so the relay cannot use them.</li>
       <li>Posts, follows, and any account activity live on your Bluesky account at your Personal
         Data Server (PDS, e.g. <code>bsky.social</code>), not on Nubecita's servers.</li>
       <li>Nubecita uses Firebase Analytics and Firebase Crashlytics (operated by Google) for
@@ -119,6 +123,42 @@
       <li><strong>App preferences</strong> — your chosen theme, feed selections, your analytics
         opt-out choice, and similar settings, stored locally on your device.</li>
     </ul>
+
+    <h2>The sign-in relay</h2>
+    <p>
+      Bluesky's sign-in system gives an app a longer-lasting session when a server operated by
+      the app vouches for each sign-in request. Newer versions of Nubecita therefore send three
+      kinds of request through a Nubecita-operated server at <code>auth.nubecita.app</code>:
+      signing in, renewing your session in the background, and signing out. The relay adds
+      Nubecita's own signature and passes the request on to your PDS's authorization server.
+      Everything else the app does (reading, posting, following, messaging) goes directly
+      from your device to your PDS and never through the relay.
+    </p>
+    <ul>
+      <li><strong>What passes through it.</strong> The sign-in code or session tokens that the
+        request carries, and your device's IP address. Your password does not: you still enter
+        it on Bluesky's own login screen.</li>
+      <li><strong>What it cannot do.</strong> Your tokens are bound to a key that is generated
+        on your device and never leaves it (DPoP). Without that key the relay cannot use a
+        token to read or act on your account.</li>
+      <li><strong>What it keeps.</strong> No account database. Its logs record the kind of
+        request, the authorization server's hostname, whether it succeeded, and how long it
+        took. They do not record tokens, handles, or account identifiers. The hosting
+        provider's standard request logs also include the IP address. Logs are kept for up to
+        30 days.</li>
+      <li><strong>Interrupted renewals.</strong> If a connection drops while your session is
+        being renewed, you could otherwise be signed out. To prevent that, the relay may keep
+        the result of a renewal for up to 24 hours, encrypted so that it can only be unlocked
+        by a repeat of the same request from your own device.</li>
+      <li><strong>App verification.</strong> When you sign in, the app asks Google Play
+        Integrity (through Firebase App Check) to confirm that the request comes from a
+        genuine copy of Nubecita. This involves Google checking the app and device; it does
+        not share your Bluesky identity with Google.</li>
+    </ul>
+    <p>
+      The relay runs on Google Cloud (Firebase). Its source code is public at
+      <a href="https://github.com/kikin81/nubecita-web" target="_blank" rel="noopener">github.com/kikin81/nubecita-web</a>.
+    </p>
 
     <h2>Analytics and crash reporting</h2>
     <p>
@@ -196,6 +236,9 @@
         also processes your payment.</li>
       <li><strong>RevenueCat</strong>, for subscription management if you buy Nubecita Pro,
         as described under "Purchases and subscriptions" above.</li>
+      <li><strong>Google Cloud</strong>, which hosts the sign-in relay, and
+        <strong>Google Play Integrity / Firebase App Check</strong>, which verifies the app
+        at sign-in, as described under "The sign-in relay" above.</li>
     </ul>
     <p>
       All network traffic from Nubecita to these services is sent over HTTPS.
@@ -215,8 +258,10 @@
       Nubecita relies on platform protections for the data it holds on your device. OAuth
       tokens are stored in Android's encrypted credential storage and are bound to your device
       via DPoP, so an exfiltrated token cannot be replayed from another device. All network
-      requests use HTTPS. Nubecita does not operate any server that holds your personal data,
-      so there is no Nubecita-side account database that could be breached.
+      requests use HTTPS. The sign-in relay is the only server Nubecita operates. It holds no
+      passwords, no profile information and no content, and nothing it handles can be used to
+      access an account without the key on your device. The key it signs with is kept in a
+      managed key service and cannot be exported.
     </p>
 
     <h2>Children's privacy</h2>
