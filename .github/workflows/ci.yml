@@ -66,4 +66,4 @@ jobs:
       - name: Validate every file under oauth/
         run: node oauth/validate.mjs
       - name: Validator tests
-        run: node --test oauth/
+        run: node --test oauth/validate.test.mjs
