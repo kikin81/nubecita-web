@@ -1,6 +1,6 @@
 {
   "client_id": "https://nubecita.app/oauth/client-metadata-rehearsal.json",
-  "application_type": "native",
+  "application_type": "web",
   "client_name": "Nubecita (rehearsal)",
   "client_uri": "https://nubecita.app",
   "logo_uri": "https://nubecita.app/assets/app-icon.svg",
@@ -12,7 +12,6 @@
     "refresh_token"
   ],
   "redirect_uris": [
-    "app.nubecita:/oauth-redirect",
     "https://nubecita.app/oauth-redirect",
     "https://nubecita.app/oauth-redirect/"
   ],
@@ -20,5 +19,19 @@
     "code"
   ],
   "scope": "atproto transition:generic transition:chat.bsky",
-  "token_endpoint_auth_method": "none"
+  "token_endpoint_auth_method": "private_key_jwt",
+  "token_endpoint_auth_signing_alg": "ES256",
+  "jwks": {
+    "keys": [
+      {
+        "kty": "EC",
+        "crv": "P-256",
+        "x": "XPsZ006HDDl-wLeOM3xHMG6GV6TKzKfe_6IecdC5AAE",
+        "y": "2kjRaW8ODnm3CDbjSNR40JaFAgfX0d8chepAet6rFVg",
+        "kid": "rehearsal-1",
+        "alg": "ES256",
+        "use": "sig"
+      }
+    ]
+  }
 }
