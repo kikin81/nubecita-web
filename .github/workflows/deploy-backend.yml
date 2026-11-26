@@ -1,0 +1,59 @@
+name: Deploy backend
+
+# Ships the OAuth token-mediating backend (functions/ + its Hosting rewrite).
+#
+# Only main can deploy: the job is skipped on any other ref, the "production"
+# environment accepts only main and waits for an approval, and the Google
+# Cloud credential is minted through Workload Identity Federation, whose
+# provider rejects tokens from any other repository or branch. No
+# service-account key exists.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "functions/**"
+      - "hosting/**"
+      - "firebase.json"
+      - ".firebaserc"
+      - ".github/workflows/deploy-backend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - name: Install
+        working-directory: functions
+        run: npm ci
+      - name: Test
+        working-directory: functions
+        run: npm test
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+      - name: Deploy
+        run: >-
+          npx --yes firebase-tools@15 deploy
+          --only functions:oauth-mediator,hosting
+          --project nubecita-2a4c1
+          --non-interactive
+          --force
