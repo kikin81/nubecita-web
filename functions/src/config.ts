@@ -55,3 +55,11 @@ export const CLIENTS: readonly ClientConfig[] = [
 /** Sign-in starts allowed per caller address in each window. */
 export const SIGN_IN_START_LIMIT = 10;
 export const SIGN_IN_START_WINDOW_MS = 5 * 60_000;
+
+/**
+ * Sign-in starts allowed per *connecting* address in the same window. Far
+ * above what real users produce even when many share one proxy address, and
+ * a tenth of what an authorization server allows the whole client, so a
+ * single address forging its claimed origin cannot use up the client's quota.
+ */
+export const SIGN_IN_START_CONNECTION_LIMIT = 300;

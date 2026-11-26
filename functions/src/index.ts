@@ -9,6 +9,7 @@ import {
   FUNCTION_TIMEOUT_SECONDS,
   REGION,
   RUNTIME_SERVICE_ACCOUNT,
+  SIGN_IN_START_CONNECTION_LIMIT,
   SIGN_IN_START_LIMIT,
   SIGN_IN_START_WINDOW_MS,
 } from "./config";
@@ -39,6 +40,7 @@ function mediator(): HandleRequest {
       await getAppCheck().verifyToken(token);
     }),
     allowSignInStart: createRateLimit(SIGN_IN_START_LIMIT, SIGN_IN_START_WINDOW_MS, now),
+    allowSignInStartFromConnection: createRateLimit(SIGN_IN_START_CONNECTION_LIMIT, SIGN_IN_START_WINDOW_MS, now),
     settings: environmentSettings,
     log: stdoutSink,
     now,
@@ -76,11 +78,22 @@ export const oauthMediator = onRequest(
       path: req.path,
       headers,
       body: req.rawBody?.toString("utf8") ?? "",
-      // Best effort, for rate limiting sign-in starts only. Falls back to the
-      // connection's address so callers without the header do not all share
-      // one bucket.
-      callerAddress: headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip,
+      // For rate limiting sign-in starts only. The first forwarded hop is what
+      // the caller claims; the last is appended by Google's front end and
+      // cannot be forged. Through Hosting the first is the real client; called
+      // directly, only the last can be trusted. Both fall back to the
+      // connection's address so callers without the header do not share one
+      // bucket.
+      callerAddress: forwardedHops(headers["x-forwarded-for"]).at(0) ?? req.ip,
+      connectingAddress: forwardedHops(headers["x-forwarded-for"]).at(-1) ?? req.ip,
     });
     res.status(response.status).set(response.headers).send(response.body);
   },
 );
+
+function forwardedHops(header: string | undefined): string[] {
+  return (header ?? "")
+    .split(",")
+    .map((hop) => hop.trim())
+    .filter((hop) => hop !== "");
+}
