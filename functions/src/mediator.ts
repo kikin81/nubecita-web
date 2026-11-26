@@ -133,11 +133,13 @@ async function mediate(
   entry.kid = key.kid;
 
   if (kind === "par") {
-    // Both are counted on every sign-in start, so neither can be starved by
-    // tripping the other first.
-    const withinConnectionCeiling = deps.allowSignInStartFromConnection(request.connectingAddress ?? "unknown");
-    const withinCallerLimit = deps.allowSignInStart(request.callerAddress ?? "unknown");
-    if (!withinConnectionCeiling || !withinCallerLimit) return refuse("rate_limited");
+    // The caller's own limit first, and a request it refuses is not counted
+    // against the connecting address. Through Hosting that address is an edge
+    // shared by many users, so one client hammering away past its own limit
+    // must not use up everyone's ceiling. A caller that forges a new address
+    // each time passes the first check and is counted by the second.
+    if (!deps.allowSignInStart(request.callerAddress ?? "unknown")) return refuse("rate_limited");
+    if (!deps.allowSignInStartFromConnection(request.connectingAddress ?? "unknown")) return refuse("rate_limited");
   }
 
   const verdict: AttestationVerdict = await deps.verifyAttestation(request.headers["x-firebase-appcheck"]);

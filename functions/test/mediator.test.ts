@@ -590,6 +590,25 @@ describe("rate limiting", () => {
     expect([first.status, again.status, someoneElse.status]).toEqual([201, 429, 201]);
   });
 
+  it("does not let one caller hammering past its own limit use up the connecting address's ceiling", async () => {
+    const ok: Upstream = () => json(201, {request_uri: "urn:x"});
+    const h = harness({upstream: [ok, ok, ok], signInLimit: 1, connectionLimit: 3});
+    // Through Hosting the connecting address is an edge shared by many users.
+    const edge = "198.51.100.1";
+
+    const hammering = [];
+    for (let i = 0; i < 10; i++) {
+      hammering.push((await h.handle({...par(), callerAddress: "203.0.113.1", connectingAddress: edge})).status);
+    }
+    const others = [
+      (await h.handle({...par(), callerAddress: "203.0.113.2", connectingAddress: edge})).status,
+      (await h.handle({...par(), callerAddress: "203.0.113.3", connectingAddress: edge})).status,
+    ];
+
+    expect(hammering).toEqual([201, ...Array<number>(9).fill(429)]);
+    expect(others).toEqual([201, 201]);
+  });
+
   it("does not limit refreshes", async () => {
     const ok: Upstream = () => json(200, {});
     const h = harness({upstream: [ok, ok, ok], signInLimit: 1});
