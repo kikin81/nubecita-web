@@ -76,8 +76,10 @@ export const oauthMediator = onRequest(
       path: req.path,
       headers,
       body: req.rawBody?.toString("utf8") ?? "",
-      // Best effort, for rate limiting sign-in starts only.
-      callerAddress: headers["x-forwarded-for"]?.split(",")[0]?.trim(),
+      // Best effort, for rate limiting sign-in starts only. Falls back to the
+      // connection's address so callers without the header do not all share
+      // one bucket.
+      callerAddress: headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip,
     });
     res.status(response.status).set(response.headers).send(response.body);
   },

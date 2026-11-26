@@ -45,6 +45,10 @@ WIF_POOL="github"
 WIF_PROVIDER="nubecita-web"
 
 BUDGET_NAME="Nubecita OAuth backend"
+
+# Where alerts are sent. Cloudflare Email Routing forwards this address.
+ALERT_EMAIL="alerts@nubecita.app"
+ALERT_CHANNEL_NAME="Nubecita backend alerts"
 BUDGET_AMOUNT="5USD"
 
 RUNTIME_SA="${RUNTIME_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
@@ -262,22 +266,28 @@ metric oauth_mediator_signin_attestation_failures \
   '(jsonPayload.kind="par" OR jsonPayload.kind="code_exchange") AND jsonPayload.attestation!="valid"'
 
 say "Alert policies"
-CHANNELS="$(query gcloud beta monitoring channels list --project "$PROJECT_ID" --format='value(name)' || true)"
-if [[ -z "$CHANNELS" ]]; then
-  echo "   no notification channel in this project yet: policies will be created but notify no one."
-  echo "   Add one in Cloud Monitoring -> Alerting -> Edit notification channels, then re-run this script."
+if query gcloud beta monitoring channels list --project "$PROJECT_ID" --format='value(displayName)' | grep -qxF "$ALERT_CHANNEL_NAME"; then
+  echo "   notification channel exists"
+else
+  run gcloud beta monitoring channels create --project "$PROJECT_ID" \
+    --display-name "$ALERT_CHANNEL_NAME" --type email \
+    --channel-labels "email_address=${ALERT_EMAIL}" >/dev/null
 fi
+# Only this script's own channel: other channels in the project belong to
+# other alerts.
+CHANNELS="$(query gcloud beta monitoring channels list --project "$PROJECT_ID" \
+  --filter "displayName=\"${ALERT_CHANNEL_NAME}\"" --format='value(name)' || true)"
 CHANNELS_JSON="$(printf '%s\n' "$CHANNELS" | sed '/^$/d' | sed 's/.*/"&"/' | paste -sd, -)"
 CHANNELS_CSV="$(printf '%s\n' "$CHANNELS" | sed '/^$/d' | paste -sd, -)"
 # One "<resource name><TAB><display name>" line per policy.
-EXISTING_POLICIES="$(query gcloud alpha monitoring policies list --project "$PROJECT_ID" --format='value(name,displayName)' || true)"
+EXISTING_POLICIES="$(query gcloud monitoring policies list --project "$PROJECT_ID" --format='value(name,displayName)' || true)"
 policy() { # display name, metric, threshold, window seconds, documentation
   local existing
   existing="$(awk -F'\t' -v wanted="$1" '$2 == wanted {print $1; exit}' <<<"$EXISTING_POLICIES")"
   if [[ -n "$existing" ]]; then
     if [[ -n "$CHANNELS_CSV" ]]; then
       # Keeps an existing policy pointed at whatever channels exist now.
-      run gcloud alpha monitoring policies update "$existing" --project "$PROJECT_ID" \
+      run gcloud monitoring policies update "$existing" --project "$PROJECT_ID" \
         --set-notification-channels "$CHANNELS_CSV" >/dev/null
       echo "   $1 exists (notification channels synced)"
     else
@@ -310,7 +320,7 @@ policy() { # display name, metric, threshold, window seconds, documentation
   ]
 }
 JSON
-  run gcloud alpha monitoring policies create --project "$PROJECT_ID" --policy-from-file "$file" >/dev/null
+  run gcloud monitoring policies create --project "$PROJECT_ID" --policy-from-file "$file" >/dev/null
   rm -f "$file"
 }
 # Thresholds are starting points; tune them once real traffic shows the baseline.
