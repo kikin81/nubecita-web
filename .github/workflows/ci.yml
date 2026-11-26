@@ -54,3 +54,16 @@ jobs:
         with:
           node-version: "20"
       - uses: pre-commit/action@v3.0.1
+
+  metadata:
+    name: OAuth client metadata
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate every file under oauth/
+        run: node oauth/validate.mjs
+      - name: Validator tests
+        run: node --test oauth/
