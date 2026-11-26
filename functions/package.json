@@ -11,6 +11,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:emulator": "firebase emulators:exec --only firestore --project demo-nubecita \"vitest run --config vitest.emulator.config.ts\"",
     "serve": "npm run build && firebase emulators:start --only functions"
   },
   "dependencies": {
