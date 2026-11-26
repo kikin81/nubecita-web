@@ -18,6 +18,7 @@
 #     Workload Identity Federation, only from the main branch of this repo.
 #     No service-account key is ever created.
 #   - a budget alert
+#   - log-based metrics and alert policies for the backend
 #   - the GitHub "production" environment (approval required) and the two
 #     repository variables the deploy workflow reads
 #
@@ -44,6 +45,10 @@ WIF_POOL="github"
 WIF_PROVIDER="nubecita-web"
 
 BUDGET_NAME="Nubecita OAuth backend"
+
+# Where alerts are sent. Cloudflare Email Routing forwards this address.
+ALERT_EMAIL="alerts@nubecita.app"
+ALERT_CHANNEL_NAME="Nubecita backend alerts"
 BUDGET_AMOUNT="5USD"
 
 RUNTIME_SA="${RUNTIME_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
@@ -53,15 +58,61 @@ DRY_RUN=false
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
 
 say() { printf '\n==> %s\n' "$*"; }
+
+# For some minutes after an API is enabled, calls to it fail at random with
+# "has not been used in project ... or it is disabled". Those are retried;
+# every other failure is real.
+api_not_ready() { [[ "$1" == *"it is disabled"* || "$1" == *"SERVICE_DISABLED"* ]]; }
+
 run() {
   if $DRY_RUN; then
     # To stderr, so a caller that silences a command's output still sees it.
     printf '   [dry-run] %s\n' "$*" >&2
-  else
-    "$@"
+    return 0
   fi
+  local output attempt
+  for attempt in 1 2 3 4 5 6 7 8; do
+    if output="$("$@" 2>&1)"; then
+      [[ -n "$output" ]] && printf '%s\n' "$output"
+      return 0
+    fi
+    # A resource created a moment ago (a service account, say) can also be
+    # reported as missing by the next call that refers to it.
+    if { ! api_not_ready "$output" && [[ "$output" != *"does not exist"* && "$output" != *"or it may not exist"* ]]; } ||
+      ((attempt == 8)); then
+      printf '%s\n' "$output" >&2
+      return 1
+    fi
+    sleep 10
+  done
 }
-exists() { "$@" >/dev/null 2>&1; }
+
+# Prints a read-only command's output, retrying while its API is not ready.
+query() {
+  local output attempt
+  for attempt in 1 2 3 4 5 6 7 8; do
+    if output="$("$@" 2>/dev/null)"; then
+      printf '%s\n' "$output"
+      return 0
+    fi
+    output="$("$@" 2>&1 || true)"
+    if ! api_not_ready "$output"; then return 1; fi
+    ((attempt == 8)) || sleep 10
+  done
+  return 1
+}
+
+# True when the resource exists. A "not ready" answer is not a "no".
+exists() {
+  local output attempt
+  for attempt in 1 2 3 4 5 6 7 8; do
+    if output="$("$@" 2>&1)"; then return 0; fi
+    if ! api_not_ready "$output"; then return 1; fi
+    ((attempt == 8)) || sleep 10
+  done
+  echo "   API still not ready: $*" >&2
+  exit 1
+}
 
 PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
 
@@ -79,7 +130,9 @@ run gcloud services enable --project "$PROJECT_ID" \
   firebasehosting.googleapis.com \
   firebaseextensions.googleapis.com \
   cloudbilling.googleapis.com \
-  billingbudgets.googleapis.com
+  billingbudgets.googleapis.com \
+  logging.googleapis.com \
+  monitoring.googleapis.com
 
 say "KMS key ring ${KMS_KEYRING} (${KMS_LOCATION})"
 if exists gcloud kms keyrings describe "$KMS_KEYRING" --location "$KMS_LOCATION" --project "$PROJECT_ID"; then
@@ -168,8 +221,8 @@ run gcloud iam service-accounts add-iam-policy-binding "$DEPLOY_SA" --project "$
 say "Budget alert (${BUDGET_AMOUNT})"
 # --billing-project: bill these API calls to this project rather than to
 # whatever quota project the local gcloud defaults to.
-BILLING_ACCOUNT="$(gcloud billing projects describe "$PROJECT_ID" --billing-project "$PROJECT_ID" \
-  --format='value(billingAccountName)' 2>/dev/null | sed 's#billingAccounts/##' || true)"
+BILLING_ACCOUNT="$(query gcloud billing projects describe "$PROJECT_ID" --billing-project "$PROJECT_ID" \
+  --format='value(billingAccountName)' | sed 's#billingAccounts/##' || true)"
 if [[ -z "$BILLING_ACCOUNT" ]]; then
   if $DRY_RUN; then
     echo "   [dry-run] billing account not readable until the APIs above are enabled; would create the budget"
@@ -177,8 +230,8 @@ if [[ -z "$BILLING_ACCOUNT" ]]; then
     echo "   no billing account readable: is the project on the Blaze plan?" >&2
     exit 1
   fi
-elif gcloud billing budgets list --billing-account "$BILLING_ACCOUNT" --billing-project "$PROJECT_ID" \
-  --format='value(displayName)' 2>/dev/null | grep -qx "$BUDGET_NAME"; then
+elif query gcloud billing budgets list --billing-account "$BILLING_ACCOUNT" --billing-project "$PROJECT_ID" \
+  --format='value(displayName)' | grep -qx "$BUDGET_NAME"; then
   echo "   exists"
 else
   run gcloud billing budgets create --billing-account "$BILLING_ACCOUNT" --billing-project "$PROJECT_ID" \
@@ -189,6 +242,94 @@ else
     --threshold-rule percent=0.9 \
     --threshold-rule percent=1.0
 fi
+
+say "Log-based metrics"
+# The backend writes one structured line per request (functions/src/log.ts).
+# Each metric counts lines matching a filter on those fields.
+BASE_FILTER='resource.type="cloud_run_revision" AND jsonPayload.message="oauth_mediator_request"'
+metric() { # name, description, extra filter
+  if exists gcloud logging metrics describe "$1" --project "$PROJECT_ID"; then
+    echo "   $1 exists"
+  else
+    run gcloud logging metrics create "$1" --project "$PROJECT_ID" \
+      --description "$2" --log-filter "${BASE_FILTER} AND $3"
+  fi
+}
+metric oauth_mediator_backend_errors \
+  "Requests the backend failed itself (5xx it produced, not relayed)" \
+  'jsonPayload.origin="mediator" AND jsonPayload.status>=500'
+metric oauth_mediator_relayed_invalid_grant \
+  "invalid_grant answers relayed from authorization servers: each one ends a session" \
+  'jsonPayload.upstreamError="invalid_grant"'
+metric oauth_mediator_signin_attestation_failures \
+  "Sign-in requests without a valid App Check token" \
+  '(jsonPayload.kind="par" OR jsonPayload.kind="code_exchange") AND jsonPayload.attestation!="valid"'
+
+say "Alert policies"
+if query gcloud beta monitoring channels list --project "$PROJECT_ID" --format='value(displayName)' | grep -qxF "$ALERT_CHANNEL_NAME"; then
+  echo "   notification channel exists"
+else
+  run gcloud beta monitoring channels create --project "$PROJECT_ID" \
+    --display-name "$ALERT_CHANNEL_NAME" --type email \
+    --channel-labels "email_address=${ALERT_EMAIL}" >/dev/null
+fi
+# Only this script's own channel: other channels in the project belong to
+# other alerts.
+CHANNELS="$(query gcloud beta monitoring channels list --project "$PROJECT_ID" \
+  --filter "displayName=\"${ALERT_CHANNEL_NAME}\"" --format='value(name)' || true)"
+CHANNELS_JSON="$(printf '%s\n' "$CHANNELS" | sed '/^$/d' | sed 's/.*/"&"/' | paste -sd, -)"
+CHANNELS_CSV="$(printf '%s\n' "$CHANNELS" | sed '/^$/d' | paste -sd, -)"
+# One "<resource name><TAB><display name>" line per policy.
+EXISTING_POLICIES="$(query gcloud monitoring policies list --project "$PROJECT_ID" --format='value(name,displayName)' || true)"
+policy() { # display name, metric, threshold, window seconds, documentation
+  local existing
+  existing="$(awk -F'\t' -v wanted="$1" '$2 == wanted {print $1; exit}' <<<"$EXISTING_POLICIES")"
+  if [[ -n "$existing" ]]; then
+    if [[ -n "$CHANNELS_CSV" ]]; then
+      # Keeps an existing policy pointed at whatever channels exist now.
+      run gcloud monitoring policies update "$existing" --project "$PROJECT_ID" \
+        --set-notification-channels "$CHANNELS_CSV" >/dev/null
+      echo "   $1 exists (notification channels synced)"
+    else
+      echo "   $1 exists"
+    fi
+    return
+  fi
+  local file
+  file="$(mktemp)"
+  cat >"$file" <<JSON
+{
+  "displayName": "$1",
+  "combiner": "OR",
+  "documentation": {"content": "$5", "mimeType": "text/markdown"},
+  "notificationChannels": [${CHANNELS_JSON}],
+  "conditions": [
+    {
+      "displayName": "$1",
+      "conditionThreshold": {
+        "filter": "metric.type=\"logging.googleapis.com/user/$2\" AND resource.type=\"cloud_run_revision\"",
+        "aggregations": [
+          {"alignmentPeriod": "${4}s", "perSeriesAligner": "ALIGN_SUM", "crossSeriesReducer": "REDUCE_SUM"}
+        ],
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": $3,
+        "duration": "0s",
+        "trigger": {"count": 1}
+      }
+    }
+  ]
+}
+JSON
+  run gcloud monitoring policies create --project "$PROJECT_ID" --policy-from-file "$file" >/dev/null
+  rm -f "$file"
+}
+# Thresholds are starting points; tune them once real traffic shows the baseline.
+policy "OAuth backend: errors" oauth_mediator_backend_errors 5 300 \
+  "The backend itself is failing requests. Apps keep their sessions but cannot refresh. While the production client is still public, turning on bypass mode (MEDIATOR_BYPASS=true) sends apps to the direct path."
+policy "OAuth backend: relayed invalid_grant spike" oauth_mediator_relayed_invalid_grant 20 600 \
+  "Authorization servers are ending sessions at an unusual rate. Check for a reused jti, a wrong signing key, or a client metadata change."
+policy "OAuth backend: sign-in attestation failures" oauth_mediator_signin_attestation_failures 20 600 \
+  "Many sign-ins lack a valid App Check token. Check Play Integrity quota and the App Check console before turning enforcement on."
 
 say "GitHub environment and variables"
 REVIEWER_ID="$(gh api user --jq .id)"

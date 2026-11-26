@@ -1,5 +1,7 @@
 /** Deployment settings that are not secret. */
 
+import type {ClientConfig} from "./clients";
+
 /** Firebase / Google Cloud project that hosts the backend. */
 export const PROJECT_ID = "nubecita-2a4c1";
 
@@ -18,3 +20,38 @@ export const RUNTIME_SERVICE_ACCOUNT = `oauth-mediator@${PROJECT_ID}.iam.gservic
  * guessing: upstream wait < function timeout < app timeout.
  */
 export const FUNCTION_TIMEOUT_SECONDS = 30;
+
+const KEY_RING = `projects/${PROJECT_ID}/locations/us/keyRings/oauth-client-auth`;
+const keyVersion = (key: string, version: number): string => `${KEY_RING}/cryptoKeys/${key}/cryptoKeyVersions/${version}`;
+
+/**
+ * The OAuth clients this backend authenticates for. Each `clientId` is the URL
+ * of a metadata file in this repository's `oauth/` directory, and each key id
+ * must match a `kid` published in that file's `jwks`.
+ *
+ * Adding a key: add it here and to the metadata file, then make it the
+ * default. NEVER remove a key while a session bound to it may still be alive
+ * (two years after it stopped being the default): removing it signs those
+ * users out.
+ */
+export const CLIENTS: readonly ClientConfig[] = [
+  {
+    clientId: "https://nubecita.app/oauth/client-metadata.json",
+    defaultKid: "prod-1",
+    keys: {"prod-1": keyVersion("nubecita-prod", 1)},
+  },
+  {
+    clientId: "https://nubecita.app/oauth/client-metadata-test.json",
+    defaultKid: "test-1",
+    keys: {"test-1": keyVersion("nubecita-test", 1)},
+  },
+  {
+    clientId: "https://nubecita.app/oauth/client-metadata-rehearsal.json",
+    defaultKid: "rehearsal-1",
+    keys: {"rehearsal-1": keyVersion("nubecita-rehearsal", 1)},
+  },
+];
+
+/** Sign-in starts allowed per caller address in each window. */
+export const SIGN_IN_START_LIMIT = 10;
+export const SIGN_IN_START_WINDOW_MS = 5 * 60_000;
