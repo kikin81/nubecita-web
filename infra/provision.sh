@@ -54,15 +54,61 @@ DRY_RUN=false
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
 
 say() { printf '\n==> %s\n' "$*"; }
+
+# For some minutes after an API is enabled, calls to it fail at random with
+# "has not been used in project ... or it is disabled". Those are retried;
+# every other failure is real.
+api_not_ready() { [[ "$1" == *"it is disabled"* || "$1" == *"SERVICE_DISABLED"* ]]; }
+
 run() {
   if $DRY_RUN; then
     # To stderr, so a caller that silences a command's output still sees it.
     printf '   [dry-run] %s\n' "$*" >&2
-  else
-    "$@"
+    return 0
   fi
+  local output attempt
+  for attempt in 1 2 3 4 5 6 7 8; do
+    if output="$("$@" 2>&1)"; then
+      [[ -n "$output" ]] && printf '%s\n' "$output"
+      return 0
+    fi
+    # A resource created a moment ago (a service account, say) can also be
+    # reported as missing by the next call that refers to it.
+    if { ! api_not_ready "$output" && [[ "$output" != *"does not exist"* && "$output" != *"or it may not exist"* ]]; } ||
+      ((attempt == 8)); then
+      printf '%s\n' "$output" >&2
+      return 1
+    fi
+    sleep 10
+  done
 }
-exists() { "$@" >/dev/null 2>&1; }
+
+# Prints a read-only command's output, retrying while its API is not ready.
+query() {
+  local output attempt
+  for attempt in 1 2 3 4 5 6 7 8; do
+    if output="$("$@" 2>/dev/null)"; then
+      printf '%s\n' "$output"
+      return 0
+    fi
+    output="$("$@" 2>&1 || true)"
+    if ! api_not_ready "$output"; then return 1; fi
+    ((attempt == 8)) || sleep 10
+  done
+  return 1
+}
+
+# True when the resource exists. A "not ready" answer is not a "no".
+exists() {
+  local output attempt
+  for attempt in 1 2 3 4 5 6 7 8; do
+    if output="$("$@" 2>&1)"; then return 0; fi
+    if ! api_not_ready "$output"; then return 1; fi
+    ((attempt == 8)) || sleep 10
+  done
+  echo "   API still not ready: $*" >&2
+  exit 1
+}
 
 PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
 
@@ -171,8 +217,8 @@ run gcloud iam service-accounts add-iam-policy-binding "$DEPLOY_SA" --project "$
 say "Budget alert (${BUDGET_AMOUNT})"
 # --billing-project: bill these API calls to this project rather than to
 # whatever quota project the local gcloud defaults to.
-BILLING_ACCOUNT="$(gcloud billing projects describe "$PROJECT_ID" --billing-project "$PROJECT_ID" \
-  --format='value(billingAccountName)' 2>/dev/null | sed 's#billingAccounts/##' || true)"
+BILLING_ACCOUNT="$(query gcloud billing projects describe "$PROJECT_ID" --billing-project "$PROJECT_ID" \
+  --format='value(billingAccountName)' | sed 's#billingAccounts/##' || true)"
 if [[ -z "$BILLING_ACCOUNT" ]]; then
   if $DRY_RUN; then
     echo "   [dry-run] billing account not readable until the APIs above are enabled; would create the budget"
@@ -180,8 +226,8 @@ if [[ -z "$BILLING_ACCOUNT" ]]; then
     echo "   no billing account readable: is the project on the Blaze plan?" >&2
     exit 1
   fi
-elif gcloud billing budgets list --billing-account "$BILLING_ACCOUNT" --billing-project "$PROJECT_ID" \
-  --format='value(displayName)' 2>/dev/null | grep -qx "$BUDGET_NAME"; then
+elif query gcloud billing budgets list --billing-account "$BILLING_ACCOUNT" --billing-project "$PROJECT_ID" \
+  --format='value(displayName)' | grep -qx "$BUDGET_NAME"; then
   echo "   exists"
 else
   run gcloud billing budgets create --billing-account "$BILLING_ACCOUNT" --billing-project "$PROJECT_ID" \
@@ -216,16 +262,27 @@ metric oauth_mediator_signin_attestation_failures \
   '(jsonPayload.kind="par" OR jsonPayload.kind="code_exchange") AND jsonPayload.attestation!="valid"'
 
 say "Alert policies"
-CHANNELS="$(gcloud beta monitoring channels list --project "$PROJECT_ID" --format='value(name)' 2>/dev/null || true)"
+CHANNELS="$(query gcloud beta monitoring channels list --project "$PROJECT_ID" --format='value(name)' || true)"
 if [[ -z "$CHANNELS" ]]; then
   echo "   no notification channel in this project yet: policies will be created but notify no one."
   echo "   Add one in Cloud Monitoring -> Alerting -> Edit notification channels, then re-run this script."
 fi
 CHANNELS_JSON="$(printf '%s\n' "$CHANNELS" | sed '/^$/d' | sed 's/.*/"&"/' | paste -sd, -)"
-EXISTING_POLICIES="$(gcloud alpha monitoring policies list --project "$PROJECT_ID" --format='value(displayName)' 2>/dev/null || true)"
+CHANNELS_CSV="$(printf '%s\n' "$CHANNELS" | sed '/^$/d' | paste -sd, -)"
+# One "<resource name><TAB><display name>" line per policy.
+EXISTING_POLICIES="$(query gcloud alpha monitoring policies list --project "$PROJECT_ID" --format='value(name,displayName)' || true)"
 policy() { # display name, metric, threshold, window seconds, documentation
-  if grep -qxF "$1" <<<"$EXISTING_POLICIES"; then
-    echo "   $1 exists"
+  local existing
+  existing="$(awk -F'\t' -v wanted="$1" '$2 == wanted {print $1; exit}' <<<"$EXISTING_POLICIES")"
+  if [[ -n "$existing" ]]; then
+    if [[ -n "$CHANNELS_CSV" ]]; then
+      # Keeps an existing policy pointed at whatever channels exist now.
+      run gcloud alpha monitoring policies update "$existing" --project "$PROJECT_ID" \
+        --set-notification-channels "$CHANNELS_CSV" >/dev/null
+      echo "   $1 exists (notification channels synced)"
+    else
+      echo "   $1 exists"
+    fi
     return
   fi
   local file
