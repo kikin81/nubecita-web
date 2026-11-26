@@ -441,7 +441,7 @@ policy "OAuth backend: relayed invalid_grant spike" oauth_mediator_relayed_inval
 policy "OAuth backend: sign-in attestation failures" oauth_mediator_signin_attestation_failures 20 600 \
   "Many sign-ins lack a valid App Check token. Check Play Integrity quota and the App Check console before turning enforcement on."
 policy "OAuth backend: replay store failures" oauth_mediator_replay_store_failures 5 600 \
-  "The refresh replay store (Firestore database oauth-replay) is failing. With replayStore=unavailable refreshes are being refused; with write_failed they go through but a lost response would end the session. Check the database exists and that the runtime service account still has its conditional roles/datastore.user binding."
+  "The refresh replay store (Firestore database oauth-replay) is failing. With replayStore=unavailable refreshes are not forwarded and the app is told to use the direct path (which cannot refresh once the client is confidential); with write_failed they go through but a lost response would end the session. Check the database exists and that the runtime service account still has its conditional roles/datastore.user binding."
 
 say "GitHub environment and variables"
 REVIEWER_ID="$(gh api user --jq .id)"
