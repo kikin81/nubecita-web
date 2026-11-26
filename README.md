@@ -66,6 +66,9 @@ npm run serve     # local emulator on http://127.0.0.1:5001
   budget alert. It is idempotent; `--dry-run` prints what it would do.
 - `infra/export-jwk.sh <key> <version> <kid>` prints a key's public JWK for a
   client metadata file.
+- `infra/smoke-par.mjs <backend-url> <client-id>` sends a real sign-in start
+  through the backend, the way the app does. It spends nothing and creates no
+  session. Use the test client, never the production one.
 - Deploys run from `main` only, through the `Deploy backend` workflow, and wait
   for approval in the `production` environment.
 

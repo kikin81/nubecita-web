@@ -53,6 +53,7 @@ BUDGET_AMOUNT="5USD"
 
 RUNTIME_SA="${RUNTIME_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 DEPLOY_SA="${DEPLOY_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
+APPSPOT_SA="${PROJECT_ID}@appspot.gserviceaccount.com"
 
 DRY_RUN=false
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
@@ -115,6 +116,7 @@ exists() {
 }
 
 PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
+BUILD_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 
 say "APIs"
 run gcloud services enable --project "$PROJECT_ID" \
@@ -194,7 +196,54 @@ for role in "${DEPLOY_ROLES[@]}"; do
 done
 # Deploying a function that runs as the runtime identity requires acting as it.
 run gcloud iam service-accounts add-iam-policy-binding "$RUNTIME_SA" --project "$PROJECT_ID" \
-  --member "serviceAccount:${DEPLOY_SA}" --role roles/iam.serviceAccountUser >/dev/null
+  --member "serviceAccount:${DEPLOY_SA}" --role roles/iam.serviceAccountUser --condition None >/dev/null
+
+# firebase-tools refuses to deploy functions unless the deployer may act as the
+# project's default App Engine service account, whichever identity the
+# function actually runs as. Google creates that account with the project-wide
+# Editor role. Nothing in this project runs as it (no App Engine app, and the
+# function has its own identity), so Editor is removed first: the deployer
+# then gets to "act as" an account that can do nothing.
+#
+# To undo: gcloud projects add-iam-policy-binding nubecita-2a4c1 \
+#   --member serviceAccount:nubecita-2a4c1@appspot.gserviceaccount.com --role roles/editor
+say "Default App Engine service account ${APPSPOT_SA}"
+if query gcloud projects get-iam-policy "$PROJECT_ID" --flatten 'bindings[].members' \
+  --filter "bindings.role=roles/editor AND bindings.members=serviceAccount:${APPSPOT_SA}" \
+  --format 'value(bindings.role)' | grep -qx roles/editor; then
+  run gcloud projects remove-iam-policy-binding "$PROJECT_ID" \
+    --member "serviceAccount:${APPSPOT_SA}" --role roles/editor --condition None >/dev/null
+  echo "   removed roles/editor"
+else
+  echo "   holds no Editor role"
+fi
+run gcloud iam service-accounts add-iam-policy-binding "$APPSPOT_SA" --project "$PROJECT_ID" \
+  --member "serviceAccount:${DEPLOY_SA}" --role roles/iam.serviceAccountUser --condition None >/dev/null
+
+# 2nd-gen functions are BUILT as the Compute Engine default service account,
+# and creating one requires acting as that account too. It is also created
+# with project-wide Editor and is otherwise unused here (the Compute Engine
+# API is off). It has to keep the ability to build, so Editor is swapped for
+# the Cloud Build builder role: enough to build and store the function's
+# image, and nothing else. The builder role is added before Editor is removed,
+# so the account is never left unable to build.
+#
+# To undo: gcloud projects add-iam-policy-binding nubecita-2a4c1 \
+#   --member serviceAccount:<project-number>-compute@developer.gserviceaccount.com --role roles/editor
+say "Build service account ${BUILD_SA}"
+run gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+  --member "serviceAccount:${BUILD_SA}" --role roles/cloudbuild.builds.builder --condition None >/dev/null
+if query gcloud projects get-iam-policy "$PROJECT_ID" --flatten 'bindings[].members' \
+  --filter "bindings.role=roles/editor AND bindings.members=serviceAccount:${BUILD_SA}" \
+  --format 'value(bindings.role)' | grep -qx roles/editor; then
+  run gcloud projects remove-iam-policy-binding "$PROJECT_ID" \
+    --member "serviceAccount:${BUILD_SA}" --role roles/editor --condition None >/dev/null
+  echo "   swapped roles/editor for roles/cloudbuild.builds.builder"
+else
+  echo "   holds no Editor role"
+fi
+run gcloud iam service-accounts add-iam-policy-binding "$BUILD_SA" --project "$PROJECT_ID" \
+  --member "serviceAccount:${DEPLOY_SA}" --role roles/iam.serviceAccountUser --condition None >/dev/null
 
 say "Workload Identity Federation (${REPO}@${DEPLOY_BRANCH} only)"
 if exists gcloud iam workload-identity-pools describe "$WIF_POOL" --location global --project "$PROJECT_ID"; then
@@ -216,7 +265,7 @@ fi
 WIF_POOL_RESOURCE="projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${WIF_POOL}"
 run gcloud iam service-accounts add-iam-policy-binding "$DEPLOY_SA" --project "$PROJECT_ID" \
   --member "principalSet://iam.googleapis.com/${WIF_POOL_RESOURCE}/attribute.repository/${REPO}" \
-  --role roles/iam.workloadIdentityUser >/dev/null
+  --role roles/iam.workloadIdentityUser --condition None >/dev/null
 
 say "Budget alert (${BUDGET_AMOUNT})"
 # --billing-project: bill these API calls to this project rather than to
