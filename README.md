@@ -16,6 +16,8 @@ repository via GitHub Pages.
 ├── privacy-policy/index.html     Privacy policy (linked from Google Play Console)
 ├── terms/index.html              Terms of service
 ├── oauth/client-metadata.json    AT Protocol OAuth client manifest
+├── oauth/client-metadata-*.json  Test and rehearsal clients (never used by production builds)
+├── oauth/validate.mjs            Checks every client manifest against authorization-server rules
 ├── assets/                       Logos, OG image, illustrations
 └── .github/workflows/ci.yml      Link check + HTML validation + pre-commit
 ```

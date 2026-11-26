@@ -1,0 +1,37 @@
+{
+  "client_id": "https://nubecita.app/oauth/client-metadata-test.json",
+  "application_type": "web",
+  "client_name": "Nubecita (test)",
+  "client_uri": "https://nubecita.app",
+  "logo_uri": "https://nubecita.app/assets/app-icon.svg",
+  "tos_uri": "https://nubecita.app/terms",
+  "policy_uri": "https://nubecita.app/privacy-policy",
+  "dpop_bound_access_tokens": true,
+  "grant_types": [
+    "authorization_code",
+    "refresh_token"
+  ],
+  "redirect_uris": [
+    "https://nubecita.app/oauth-redirect",
+    "https://nubecita.app/oauth-redirect/"
+  ],
+  "response_types": [
+    "code"
+  ],
+  "scope": "atproto transition:generic transition:chat.bsky",
+  "token_endpoint_auth_method": "private_key_jwt",
+  "token_endpoint_auth_signing_alg": "ES256",
+  "jwks": {
+    "keys": [
+      {
+        "kty": "EC",
+        "crv": "P-256",
+        "x": "448d0qScd_X_DUEaDt8zE_EbqXCZiQRRFrkkyrNTvbM",
+        "y": "lXCJ18hQlapRSZSGLCyFj0ygz52C_Ja4cO_XVtIaG-k",
+        "kid": "test-1",
+        "alg": "ES256",
+        "use": "sig"
+      }
+    ]
+  }
+}
