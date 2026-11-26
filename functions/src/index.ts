@@ -21,8 +21,9 @@ export const oauthMediator = onRequest(
     invoker: "public",
   },
   async (req, res) => {
-    const headers: Record<string, string | undefined> = {};
+    const headers: Record<string, string> = {};
     for (const [name, value] of Object.entries(req.headers)) {
+      if (value === undefined) continue;
       headers[name.toLowerCase()] = Array.isArray(value) ? value.join(", ") : value;
     }
     const response = await handleRequest({
