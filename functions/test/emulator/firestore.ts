@@ -9,13 +9,22 @@ const project = process.env["GCLOUD_PROJECT"] ?? "demo-nubecita";
 if (host === undefined) throw new Error("These tests need the Firestore emulator: run `npm run test:emulator`.");
 
 /**
- * Two separate connections to the emulated replay database, opened exactly as
- * the deployed function opens its own. The second stands in for another
- * instance of the function.
+ * The deployed function reaches Firestore over REST. Against the emulator the
+ * client only does that with real Google credentials in hand: over REST it
+ * sends whatever credentials it finds instead of the emulator's admin token,
+ * and fails when it finds none. CI has none, so these tests use gRPC unless
+ * told otherwise. Run them over REST, on a machine signed in with
+ * `gcloud auth application-default login`, with EMULATOR_PREFER_REST=true.
+ */
+const preferRest = process.env["EMULATOR_PREFER_REST"] === "true";
+
+/**
+ * Two separate connections to the emulated replay database. The second stands
+ * in for another instance of the function.
  */
 export function emulatedStores() {
   const apps = [initializeApp({projectId: project}, randomUUID()), initializeApp({projectId: project}, randomUUID())];
-  const [database, otherDatabase] = apps.map((app) => initializeFirestore(app, {preferRest: true}, REPLAY_DATABASE)) as [
+  const [database, otherDatabase] = apps.map((app) => initializeFirestore(app, {preferRest}, REPLAY_DATABASE)) as [
     Firestore,
     Firestore,
   ];

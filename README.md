@@ -64,6 +64,12 @@ npm run lint
 npm run serve          # local emulator on http://127.0.0.1:5001
 ```
 
+The emulator tests run over gRPC by default, which needs no Google credentials (CI has none). The deployed function uses REST; to run the same tests that way, on a machine signed in with `gcloud auth application-default login`:
+
+```sh
+EMULATOR_PREFER_REST=true npm run test:emulator
+```
+
 `npm run test:emulator` needs the Firebase CLI (`npm install --global
 firebase-tools@15`) and a JDK 21 or newer on the `PATH`. It starts the
 Firestore emulator under a `demo-` project id, so it never touches a real
