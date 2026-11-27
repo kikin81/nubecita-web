@@ -1,0 +1,13 @@
+rules_version = '2';
+
+// The oauth-replay database belongs to the OAuth backend alone. The backend
+// reaches it with its service account, which security rules do not apply to.
+// Nothing else has any business here: apps, browsers and anyone holding the
+// project's public API key are refused everything.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

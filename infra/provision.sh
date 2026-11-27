@@ -7,13 +7,19 @@
 # Prerequisites
 #   - gcloud authenticated as a project owner, and the project on the Blaze plan
 #   - gh authenticated with admin rights on the repository
+#   - node, for the Firebase CLI (run through npx), which deploys the Firestore
+#     security rules. It uses `firebase login` or application-default
+#     credentials.
 #
 # What it creates
 #   - a Cloud KMS key ring with one EC P-256 signing key per OAuth client.
 #     Keys are generated inside KMS and cannot be exported. KEY RINGS AND KEYS
 #     CAN NEVER BE DELETED OR RENAMED, so the names below are permanent.
+#   - a Firestore database of its own for the refresh replay store, closed to
+#     every client by its security rules, with a TTL policy that deletes
+#     entries a day after they are written
 #   - the function's runtime service account, allowed to sign with those keys
-#     and nothing else
+#     and to use that one database, and nothing else
 #   - a deploy service account that GitHub Actions impersonates through
 #     Workload Identity Federation, only from the main branch of this repo.
 #     No service-account key is ever created.
@@ -39,6 +45,14 @@ KMS_KEYRING="oauth-client-auth"
 # One key per published client metadata file.
 KMS_KEYS=("nubecita-prod" "nubecita-test" "nubecita-rehearsal")
 
+# The refresh replay store (functions/src/replayStore.ts). The names must match
+# functions/src/config.ts and firebase.json. A DATABASE'S LOCATION CAN NEVER BE
+# CHANGED; it is the region the function runs in.
+REPLAY_DATABASE="oauth-replay"
+REPLAY_LOCATION="us-central1"
+REPLAY_COLLECTION="refreshReplay"
+REPLAY_TTL_FIELD="expireAt"
+
 RUNTIME_SA_NAME="oauth-mediator"
 DEPLOY_SA_NAME="github-deployer"
 WIF_POOL="github"
@@ -54,6 +68,8 @@ BUDGET_AMOUNT="5USD"
 RUNTIME_SA="${RUNTIME_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 DEPLOY_SA="${DEPLOY_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 APPSPOT_SA="${PROJECT_ID}@appspot.gserviceaccount.com"
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 DRY_RUN=false
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
@@ -126,6 +142,8 @@ run gcloud services enable --project "$PROJECT_ID" \
   artifactregistry.googleapis.com \
   eventarc.googleapis.com \
   cloudkms.googleapis.com \
+  firestore.googleapis.com \
+  firebaserules.googleapis.com \
   iam.googleapis.com \
   iamcredentials.googleapis.com \
   sts.googleapis.com \
@@ -164,7 +182,8 @@ else
     --display-name "OAuth token-mediating backend (runtime)"
 fi
 # Granted per key, never project-wide: this identity can sign with these keys
-# and read their public halves, and can do nothing else.
+# and read their public halves. Its only other grant is the replay database,
+# further down.
 for key in "${KMS_KEYS[@]}"; do
   run gcloud kms keys add-iam-policy-binding "$key" \
     --keyring "$KMS_KEYRING" --location "$KMS_LOCATION" --project "$PROJECT_ID" \
@@ -172,6 +191,45 @@ for key in "${KMS_KEYS[@]}"; do
     --role roles/cloudkms.signerVerifier \
     --condition None >/dev/null
 done
+
+say "Firestore database ${REPLAY_DATABASE} (${REPLAY_LOCATION})"
+# A database of its own rather than a collection in (default): access is
+# granted per database, so this is what keeps the runtime identity out of
+# anything else the project ever stores in Firestore.
+if exists gcloud firestore databases describe --database "$REPLAY_DATABASE" --project "$PROJECT_ID"; then
+  echo "   exists"
+else
+  run gcloud firestore databases create --database "$REPLAY_DATABASE" --project "$PROJECT_ID" \
+    --location "$REPLAY_LOCATION" --type firestore-native
+fi
+
+say "Firestore security rules (deny every client)"
+# The backend reaches the database as its service account, which rules do not
+# apply to. Everyone else, including any app holding the project's public API
+# key, is refused. Deploying rules that are already live changes nothing.
+run npx --yes firebase-tools@15 deploy --only firestore:rules \
+  --project "$PROJECT_ID" --config "${REPO_ROOT}/firebase.json" --non-interactive
+
+say "Firestore TTL policy on ${REPLAY_COLLECTION}.${REPLAY_TTL_FIELD}"
+# Entries stop being served 24 hours after they are written (the backend
+# checks on read); this is what removes them from disk afterwards.
+if query gcloud firestore fields ttls list --database "$REPLAY_DATABASE" --project "$PROJECT_ID" \
+  --collection-group "$REPLAY_COLLECTION" --format='value(name)' | grep -q "/fields/${REPLAY_TTL_FIELD}\$"; then
+  echo "   exists"
+else
+  # --async: turning a TTL policy on can take many minutes to finish.
+  run gcloud firestore fields ttls update "$REPLAY_TTL_FIELD" --database "$REPLAY_DATABASE" --project "$PROJECT_ID" \
+    --collection-group "$REPLAY_COLLECTION" --enable-ttl --async
+fi
+
+say "Replay store access for ${RUNTIME_SA}"
+# Read and write documents in the replay database only. The condition's title
+# is part of the binding's identity: changing it would add a second binding
+# instead of replacing this one.
+run gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+  --member "serviceAccount:${RUNTIME_SA}" \
+  --role roles/datastore.user \
+  --condition "expression=resource.name==\"projects/${PROJECT_ID}/databases/${REPLAY_DATABASE}\",title=oauth-replay-database-only,description=OAuth backend refresh replay store" >/dev/null
 
 say "Deploy service account ${DEPLOY_SA}"
 if exists gcloud iam service-accounts describe "$DEPLOY_SA" --project "$PROJECT_ID"; then
@@ -313,6 +371,9 @@ metric oauth_mediator_relayed_invalid_grant \
 metric oauth_mediator_signin_attestation_failures \
   "Sign-in requests without a valid App Check token" \
   '(jsonPayload.kind="par" OR jsonPayload.kind="code_exchange") AND jsonPayload.attestation!="valid"'
+metric oauth_mediator_replay_store_failures \
+  "Refreshes the replay store could not be consulted for, or could not record" \
+  'jsonPayload.replayStore:*'
 
 say "Alert policies"
 if query gcloud beta monitoring channels list --project "$PROJECT_ID" --format='value(displayName)' | grep -qxF "$ALERT_CHANNEL_NAME"; then
@@ -379,6 +440,8 @@ policy "OAuth backend: relayed invalid_grant spike" oauth_mediator_relayed_inval
   "Authorization servers are ending sessions at an unusual rate. Check for a reused jti, a wrong signing key, or a client metadata change."
 policy "OAuth backend: sign-in attestation failures" oauth_mediator_signin_attestation_failures 20 600 \
   "Many sign-ins lack a valid App Check token. Check Play Integrity quota and the App Check console before turning enforcement on."
+policy "OAuth backend: replay store failures" oauth_mediator_replay_store_failures 5 600 \
+  "The refresh replay store (Firestore database oauth-replay) is failing. With replayStore=unavailable refreshes are not forwarded and the app is told to use the direct path (which cannot refresh once the client is confidential); with write_failed they go through but a lost response would end the session. Check the database exists and that the runtime service account still has its conditional roles/datastore.user binding."
 
 say "GitHub environment and variables"
 REVIEWER_ID="$(gh api user --jq .id)"

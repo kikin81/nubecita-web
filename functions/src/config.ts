@@ -52,6 +52,14 @@ export const CLIENTS: readonly ClientConfig[] = [
   },
 ];
 
+/**
+ * Where refresh responses are remembered (functions/src/replayStore.ts): a
+ * Firestore database of its own, holding this one collection, so the runtime
+ * identity can be granted that database and nothing else.
+ */
+export const REPLAY_DATABASE = "oauth-replay";
+export const REPLAY_COLLECTION = "refreshReplay";
+
 /** Sign-in starts allowed per caller address in each window. */
 export const SIGN_IN_START_LIMIT = 10;
 export const SIGN_IN_START_WINDOW_MS = 5 * 60_000;

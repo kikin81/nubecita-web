@@ -56,6 +56,8 @@ export function mediatorError(status: number, reason: MediatorReason, forwarded:
 export const KID_HEADER = "Nubecita-Client-Auth-Kid";
 export const AUTH_METHOD_HEADER = "Nubecita-Client-Auth-Method";
 export const UPSTREAM_DATE_HEADER = "Nubecita-Upstream-Date";
+/** Present, with the value `1`, on an answer that was stored earlier rather than fetched just now. */
+export const REPLAYED_HEADER = "Nubecita-Replayed";
 
 /**
  * The authorization server's own answer, passed back unchanged and marked as
@@ -82,4 +84,28 @@ export function relayed(
   // The app corrects its clock from the authorization server's time, not ours.
   copy("date", UPSTREAM_DATE_HEADER);
   return {status: upstream.status, headers, body: upstream.body};
+}
+
+/**
+ * The authorization server's answer to an earlier attempt at the same
+ * refresh, which never reached the device. Status and body are exactly what
+ * the server sent then.
+ *
+ * Its `Date` is not passed on: the app sets its clock by that header, and an
+ * answer can be served up to a day after the server gave it.
+ */
+export function replayed(stored: {
+  status: number;
+  body: string;
+  contentType?: string;
+  dpopNonce?: string;
+  kid: string;
+  authMethod?: string;
+}): MediatorResponse {
+  const headers: Record<string, string> = {};
+  if (stored.contentType !== undefined) headers["content-type"] = stored.contentType;
+  if (stored.dpopNonce !== undefined) headers["dpop-nonce"] = stored.dpopNonce;
+  const response = relayed({status: stored.status, headers, body: stored.body}, stored.kid, stored.authMethod);
+  response.headers[REPLAYED_HEADER] = "1";
+  return response;
 }

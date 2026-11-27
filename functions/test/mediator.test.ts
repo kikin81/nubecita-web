@@ -1,151 +1,23 @@
-import {generateKeyPairSync, sign as cryptoSign, verify as cryptoVerify} from "node:crypto";
 import {describe, expect, it} from "vitest";
-import type {Signer} from "../src/assertion";
-import {type AttestationVerdict, attestationVerifier} from "../src/attestation";
-import {createClientAuthMethodReader} from "../src/clientMetadata";
-import type {ClientConfig} from "../src/clients";
+import {attestationVerifier} from "../src/attestation";
 import {GuardError} from "../src/guard";
-import {createIssuerResolver} from "../src/issuer";
-import type {RequestLog} from "../src/log";
-import {type MediatorRequest, createMediator} from "../src/mediator";
-import {type OutboundRequest, type OutboundResponse, NotSentError, OutcomeUnknownError} from "../src/outbound";
-import {createRateLimit} from "../src/rateLimit";
+import type {MediatorRequest} from "../src/mediator";
+import {NotSentError, OutcomeUnknownError} from "../src/outbound";
 import {AUTH_METHOD_HEADER, KID_HEADER, ORIGIN_HEADER, UPSTREAM_DATE_HEADER} from "../src/responses";
-import type {Settings} from "../src/settings";
-
-const CLIENT_ID = "https://nubecita.app/oauth/client-metadata-test.json";
-const ISSUER = "https://auth.test";
-const {privateKey, publicKey} = generateKeyPairSync("ec", {namedCurve: "P-256"});
-
-const clients: ClientConfig[] = [{clientId: CLIENT_ID, defaultKid: "test-2", keys: {"test-1": "kms/1", "test-2": "kms/2"}}];
-
-const METADATA: OutboundResponse = {
-  status: 200,
-  headers: {"content-type": "application/json"},
-  body: JSON.stringify({
-    issuer: ISSUER,
-    pushed_authorization_request_endpoint: `${ISSUER}/oauth/par`,
-    token_endpoint: `${ISSUER}/oauth/token`,
-    revocation_endpoint: `${ISSUER}/oauth/revoke`,
-  }),
-};
-
-type Upstream = (request: OutboundRequest) => OutboundResponse | Promise<OutboundResponse>;
-
-function json(status: number, body: unknown, headers: Record<string, string> = {}): OutboundResponse {
-  return {
-    status,
-    headers: {"content-type": "application/json", date: "Wed, 25 Nov 2026 10:00:00 GMT", ...headers},
-    body: JSON.stringify(body),
-  };
-}
-
-function harness(
-  options: {
-    upstream?: Upstream[];
-    metadata?: OutboundResponse | (() => OutboundResponse);
-    clientMetadata?: OutboundResponse | (() => OutboundResponse);
-    settings?: Partial<Settings>;
-    attestation?: AttestationVerdict;
-    signInLimit?: number;
-    connectionLimit?: number;
-  } = {},
-) {
-  const upstreamRequests: OutboundRequest[] = [];
-  const allRequests: OutboundRequest[] = [];
-  const signedWith: string[] = [];
-  const logs: RequestLog[] = [];
-  const script = [...(options.upstream ?? [])];
-  let time = 1_795_000_000_000;
-  let ids = 0;
-
-  const send = async (request: OutboundRequest): Promise<OutboundResponse> => {
-    allRequests.push(request);
-    if (request.url.pathname === "/.well-known/oauth-authorization-server") {
-      const metadata = options.metadata ?? METADATA;
-      return typeof metadata === "function" ? metadata() : metadata;
-    }
-    if (request.url.href === CLIENT_ID) {
-      const clientMetadata = options.clientMetadata ?? json(200, {token_endpoint_auth_method: "private_key_jwt"});
-      return typeof clientMetadata === "function" ? clientMetadata() : clientMetadata;
-    }
-    upstreamRequests.push(request);
-    const next = script.shift();
-    if (next === undefined) throw new Error("unexpected upstream request");
-    return next(request);
-  };
-  const signer: Signer = {
-    async signDer(kid, signingInput) {
-      signedWith.push(kid);
-      return cryptoSign("sha256", signingInput, {key: privateKey, dsaEncoding: "der"});
-    },
-  };
-  const now = (): number => time;
-  const handle = createMediator({
-    clients,
-    signer,
-    send,
-    resolveIssuer: createIssuerResolver(send, now),
-    readClientAuthMethod: createClientAuthMethodReader(send, now),
-    verifyAttestation: async () => options.attestation ?? "valid",
-    allowSignInStart: createRateLimit(options.signInLimit ?? 100, 60_000, now),
-    allowSignInStartFromConnection: createRateLimit(options.connectionLimit ?? 1_000, 60_000, now),
-    settings: () => ({
-      bypass: false,
-      enforceSignInAttestation: false,
-      strictRefreshAttestation: false,
-      ...options.settings,
-    }),
-    log: (entry) => logs.push({...entry}),
-    now,
-    newId: () => `jti-${++ids}`,
-  });
-  return {
-    handle,
-    upstreamRequests,
-    allRequests,
-    signedWith,
-    logs,
-    advance: (ms: number) => {
-      time += ms;
-    },
-  };
-}
-
-const DPOP = "eyJ0eXAiOiJkcG9wK2p3dCJ9.eyJodHUiOiJodHRwczovL2F1dGgudGVzdC9vYXV0aC90b2tlbiJ9.c2lnbmF0dXJl";
-const REFRESH_TOKEN = "ref-0123456789abcdef0123456789abcdef";
-
-function post(path: string, form: Record<string, string>, headers: Record<string, string | undefined> = {}): MediatorRequest {
-  return {
-    method: "POST",
-    path,
-    headers: {dpop: DPOP, "nubecita-issuer": ISSUER, ...headers},
-    body: new URLSearchParams({client_id: CLIENT_ID, ...form}).toString(),
-    callerAddress: "203.0.113.7",
-  };
-}
-const refresh = (headers: Record<string, string | undefined> = {}): MediatorRequest =>
-  post("/token", {grant_type: "refresh_token", refresh_token: REFRESH_TOKEN}, headers);
-const par = (headers: Record<string, string | undefined> = {}): MediatorRequest =>
-  post("/par", {response_type: "code", code_challenge: "abc", code_challenge_method: "S256", state: "s"}, headers);
-
-function assertionOf(request: OutboundRequest) {
-  const form = new URLSearchParams(request.body);
-  const jwt = form.get("client_assertion") ?? "";
-  const [header, payload, signature] = jwt.split(".");
-  return {
-    form,
-    jwt,
-    header: JSON.parse(Buffer.from(header ?? "", "base64url").toString()) as Record<string, unknown>,
-    payload: JSON.parse(Buffer.from(payload ?? "", "base64url").toString()) as Record<string, unknown>,
-    verifies: cryptoVerify(
-      "sha256",
-      Buffer.from(`${header}.${payload}`),
-      {key: publicKey, dsaEncoding: "ieee-p1363"},
-      Buffer.from(signature ?? "", "base64url"),
-    ),
-  };
-}
+import {
+  type Upstream,
+  CLIENT_ID,
+  DPOP,
+  ISSUER,
+  METADATA,
+  REFRESH_TOKEN,
+  assertionOf,
+  harness,
+  json,
+  par,
+  post,
+  refresh,
+} from "./harness";
 
 describe("routing", () => {
   it.each([
@@ -393,12 +265,12 @@ describe("the issuer", () => {
     const metadataFetches = () =>
       h.allRequests.filter((request) => request.url.pathname === "/.well-known/oauth-authorization-server").length;
 
-    await h.handle(refresh());
-    await h.handle(refresh());
+    await h.handle(refresh({}, "ref-first"));
+    await h.handle(refresh({}, "ref-second"));
     expect(metadataFetches()).toBe(1);
 
     h.advance(10 * 60_000 + 1);
-    await h.handle(refresh());
+    await h.handle(refresh({}, "ref-third"));
     expect(metadataFetches()).toBe(2);
   });
 });
@@ -613,7 +485,8 @@ describe("rate limiting", () => {
     const ok: Upstream = () => json(200, {});
     const h = harness({upstream: [ok, ok, ok], signInLimit: 1});
 
-    for (let i = 0; i < 3; i++) expect((await h.handle(refresh())).status).toBe(200);
+    for (let i = 0; i < 3; i++) expect((await h.handle(refresh({}, `ref-${i}`))).status).toBe(200);
+    expect(h.upstreamRequests).toHaveLength(3);
   });
 });
 
@@ -659,7 +532,7 @@ describe("logging", () => {
     await h.handle(par(appCheck));
     await h.handle(post("/token", {grant_type: "authorization_code", code, code_verifier: "verifier-secret"}, appCheck));
     await h.handle(refresh(appCheck));
-    await h.handle(refresh(appCheck));
+    await h.handle(refresh(appCheck, tokens.refresh_token));
     await h.handle(post("/revoke", {token: REFRESH_TOKEN}, appCheck));
 
     expect(h.logs.map((entry) => entry.kind)).toEqual(["par", "code_exchange", "refresh", "refresh", "revoke"]);

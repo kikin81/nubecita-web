@@ -20,7 +20,8 @@ repository via GitHub Pages.
 ├── oauth/validate.mjs            Checks every client manifest against authorization-server rules
 ├── functions/                    OAuth token-mediating backend (Firebase Functions)
 ├── infra/                        Provisioning scripts for the backend
-├── firebase.json                 Function + Hosting rewrite (auth.nubecita.app)
+├── firebase.json                 Function + Hosting rewrite (auth.nubecita.app) + Firestore rules
+├── firestore.rules               Deny-all rules for the backend's replay database
 ├── assets/                       Logos, OG image, illustrations
 └── .github/workflows/ci.yml      Link check + HTML validation + pre-commit
 ```
@@ -57,13 +58,26 @@ in the app repository.
 ```sh
 cd functions
 npm ci
-npm test          # unit tests
+npm test               # unit tests
+npm run test:emulator  # the replay store against the Firestore emulator
 npm run lint
-npm run serve     # local emulator on http://127.0.0.1:5001
+npm run serve          # local emulator on http://127.0.0.1:5001
 ```
 
-- `infra/provision.sh` creates the keys, service accounts, federation and
-  budget alert. It is idempotent; `--dry-run` prints what it would do.
+The emulator tests run over gRPC by default, which needs no Google credentials (CI has none). The deployed function uses REST; to run the same tests that way, on a machine signed in with `gcloud auth application-default login`:
+
+```sh
+EMULATOR_PREFER_REST=true npm run test:emulator
+```
+
+`npm run test:emulator` needs the Firebase CLI (`npm install --global
+firebase-tools@15`) and a JDK 21 or newer on the `PATH`. It starts the
+Firestore emulator under a `demo-` project id, so it never touches a real
+project.
+
+- `infra/provision.sh` creates the keys, service accounts, federation, the
+  replay database (with its security rules, TTL policy and access grant) and
+  the alerts. It is idempotent; `--dry-run` prints what it would do.
 - `infra/export-jwk.sh <key> <version> <kid>` prints a key's public JWK for a
   client metadata file.
 - `infra/smoke-par.mjs <backend-url> <client-id>` sends a real sign-in start
@@ -79,15 +93,89 @@ answer relayed unchanged, `mediator` when the backend produced it. A
 backend-produced error is `{"error": "mediator_<reason>", "forwarded": false |
 true | "unknown"}` and is never an OAuth error.
 
-Three switches can be flipped on the running service without a deploy, by
+These settings can be changed on the running service without a deploy, by
 updating its environment (`gcloud run services update oauthmediator --region
-us-central1 --update-env-vars NAME=true`); the next deploy resets them:
+us-central1 --update-env-vars NAME=value`); the next deploy resets them:
 
 | Variable | Effect |
 | --- | --- |
-| `MEDIATOR_BYPASS` | Answer every request "not forwarded, use the direct path" and contact no authorization server. Only useful while the production client is still public. |
-| `MEDIATOR_ENFORCE_SIGN_IN_ATTESTATION` | Refuse sign-ins without a valid App Check token. Off means observe only. |
-| `MEDIATOR_STRICT_REFRESH_ATTESTATION` | Also refuse refreshes and sign-outs without one. Leave off: an attestation outage would otherwise stall signed-in users. |
+| `MEDIATOR_BYPASS` | `true`: answer every request "not forwarded, use the direct path" and contact no authorization server. The one exception is a refresh the replay store holds an answer for, which still gets that answer. Only useful while the production client is still public. |
+| `MEDIATOR_ENFORCE_SIGN_IN_ATTESTATION` | `true`: refuse sign-ins without a valid App Check token. Off means observe only. |
+| `MEDIATOR_STRICT_REFRESH_ATTESTATION` | `true`: also refuse refreshes and sign-outs without one. Leave off: an attestation outage would otherwise stall signed-in users. |
+| `MEDIATOR_MIN_REFRESH_INTERVAL_MINUTES` | A number of minutes, up to 1440. Refuse (`mediator_rate_limited`, not forwarded) a refresh whose refresh token the backend handed out less than that long ago. Unset or `0` is off. See "The flip guard" below. |
+
+### Replay-safe refresh
+
+AT Protocol refresh tokens are single-use, and an authorization server deletes
+the whole session when a spent one is presented again. A refresh response lost
+between the backend and the phone would therefore sign the user out: the phone
+can only retry with the token it still has. So the backend remembers each
+successful refresh response for 24 hours and gives it again to the same device.
+
+- **One forward at a time.** Before forwarding a refresh the backend claims its
+  refresh token. A second request with the same token inside 60 seconds is
+  answered `mediator_in_progress` with `forwarded: "unknown"` instead of being
+  forwarded. If the authorization server does not answer in time the claim is
+  kept, so retries wait; on any answer that is not a success (a DPoP nonce
+  challenge, for one) it is given back at once.
+- **A lost answer is given again.** A request that presents a refresh token
+  the backend has an answer for gets that answer, marked `Nubecita-Replayed: 1`,
+  without the authorization server being contacted. It must carry a DPoP proof
+  that is valid, at most five minutes old, made for the token endpoint, and
+  signed by the same key as the original refresh. Anyone else is refused
+  (`mediator_bad_request`); the spent token is never forwarded.
+- **Nothing readable is stored.** Entries live in a Firestore database of their
+  own (`oauth-replay`, collection `refreshReplay`). An entry is named by a hash
+  of the refresh token and its content is encrypted (AES-256-GCM) under a key
+  derived from that same token, which the backend does not keep. The database
+  on its own yields no token. `firestore.rules` refuses every client; only the
+  function's service account can reach it.
+- **Entries go away.** An entry is deleted as soon as the refresh token it
+  handed out is used (the device evidently received it), and otherwise stops
+  being served after 24 hours. A Firestore TTL policy removes what is left.
+
+The log line for a request has `replayed: true` when the answer came from the
+store, and `replayStore: "unavailable"` or `"write_failed"` when the store let
+a refresh down. Both of those feed the `OAuth backend: replay store failures`
+alert.
+
+**The database must exist before this code is deployed.** If the backend cannot
+consult the store it does not forward a refresh, because the token may already
+be spent. It answers `mediator_bypass` ("not forwarded, use the direct path")
+and logs `replayStore: "unavailable"`. The app goes direct only with a refresh
+token whose earlier attempts all provably went nowhere, and keeps retrying the
+backend with one that may be spent. So while the client is public a store
+outage delays only the retries it could have hurt; once the client is
+confidential the direct path cannot refresh and every refresh waits for the
+store. Run `infra/provision.sh` first, then check that a client is refused:
+
+```sh
+curl -s -o /dev/null -w '%{http_code}\n' \
+  'https://firestore.googleapis.com/v1/projects/nubecita-2a4c1/databases/oauth-replay/documents/refreshReplay'
+# 403
+```
+
+`firestore.rules` is deployed by `infra/provision.sh`, not by the deploy
+workflow: run the script again after changing it.
+
+#### The flip guard
+
+Changing the production client from public to confidential is seen by each
+authorization-server process up to ten minutes apart. A session refreshed twice
+inside that window can land first on a process that already treats the client
+as confidential and then on one that does not, which deletes the session. For
+the hour around the change, set `MEDIATOR_MIN_REFRESH_INTERVAL_MINUTES` above
+the combined cache window (30 is a safe choice) and unset it afterwards. The
+app still holds a fresh access token when it is refused, so the refusal costs
+nothing.
+
+- A value that is not a number between 0 and 1440 makes **every** request fail
+  with `mediator_internal` until it is corrected. That is deliberate: a
+  mistyped guard that silently stayed off would not be noticed until sessions
+  were lost. After setting it, check that requests still succeed.
+- The guard knows when a refresh token was handed out from the replay store.
+  It therefore does not cover a refresh token that came from a sign-in rather
+  than from a refresh, or one whose answer could not be recorded.
 
 GitHub Pages serves this repository's root, so these source files are also
 reachable under `nubecita.app`. That is harmless: the repository is public and

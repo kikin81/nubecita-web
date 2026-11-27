@@ -1,6 +1,7 @@
 import {randomUUID} from "node:crypto";
-import {getApps, initializeApp} from "firebase-admin/app";
+import {type App, getApps, initializeApp} from "firebase-admin/app";
 import {getAppCheck} from "firebase-admin/app-check";
+import {type Firestore, initializeFirestore} from "firebase-admin/firestore";
 import {onRequest} from "firebase-functions/v2/https";
 import {attestationVerifier} from "./attestation";
 import {createClientAuthMethodReader} from "./clientMetadata";
@@ -8,11 +9,14 @@ import {
   CLIENTS,
   FUNCTION_TIMEOUT_SECONDS,
   REGION,
+  REPLAY_COLLECTION,
+  REPLAY_DATABASE,
   RUNTIME_SERVICE_ACCOUNT,
   SIGN_IN_START_CONNECTION_LIMIT,
   SIGN_IN_START_LIMIT,
   SIGN_IN_START_WINDOW_MS,
 } from "./config";
+import {firestoreReplayStore} from "./firestoreReplayStore";
 import {systemLookup} from "./guard";
 import {createIssuerResolver} from "./issuer";
 import {kmsSigner} from "./kmsSigner";
@@ -23,6 +27,15 @@ import {createRateLimit} from "./rateLimit";
 import {environmentSettings} from "./settings";
 
 let handler: HandleRequest | undefined;
+let replayDatabase: Firestore | undefined;
+
+const adminApp = (): App => getApps()[0] ?? initializeApp();
+
+/** Opened on the first refresh. Over REST, which starts faster than gRPC on a cold instance. */
+function replayFirestore(): Firestore {
+  replayDatabase ??= initializeFirestore(adminApp(), {preferRest: true}, REPLAY_DATABASE);
+  return replayDatabase;
+}
 
 /** Built on first use, so that loading this module does no work and needs no credentials. */
 function mediator(): HandleRequest {
@@ -36,12 +49,12 @@ function mediator(): HandleRequest {
     resolveIssuer: createIssuerResolver(send, now),
     readClientAuthMethod: createClientAuthMethodReader(send, now),
     verifyAttestation: attestationVerifier(async (token) => {
-      if (getApps().length === 0) initializeApp();
-      await getAppCheck().verifyToken(token);
+      await getAppCheck(adminApp()).verifyToken(token);
     }),
     allowSignInStart: createRateLimit(SIGN_IN_START_LIMIT, SIGN_IN_START_WINDOW_MS, now),
     allowSignInStartFromConnection: createRateLimit(SIGN_IN_START_CONNECTION_LIMIT, SIGN_IN_START_WINDOW_MS, now),
     settings: environmentSettings,
+    replayStore: firestoreReplayStore(replayFirestore, REPLAY_COLLECTION),
     log: stdoutSink,
     now,
     newId: randomUUID,
