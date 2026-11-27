@@ -5,7 +5,7 @@ import {type ClientConfig, selectKey} from "./clients";
 import {isProofFor, proofKeyThumbprint} from "./dpop";
 import {GuardError} from "./guard";
 import type {AuthorizationServer, ResolveIssuer} from "./issuer";
-import {type LogSink, type RequestLog, oauthErrorCode} from "./log";
+import {type LogSink, type RequestLog, oauthErrorCode, upstreamErrorDetail} from "./log";
 import {type Send, NotSentError, OutcomeUnknownError} from "./outbound";
 import type {RateLimit} from "./rateLimit";
 import {entryId, issuedMark, issuedRefreshToken, open, seal} from "./replayCrypto";
@@ -318,7 +318,10 @@ async function mediate(
   entry.forwarded = true;
   entry.origin = "upstream";
   const upstreamError = upstream.status >= 400 ? oauthErrorCode(upstream.body) : undefined;
-  if (upstreamError !== undefined) entry.upstreamError = upstreamError;
+  if (upstreamError !== undefined) {
+    entry.upstreamError = upstreamError;
+    entry.upstreamErrorDetail = upstreamErrorDetail(upstream.body);
+  }
 
   if (refresh === undefined || lease === undefined) return relayed(upstream, key.kid, await authMethod);
 
