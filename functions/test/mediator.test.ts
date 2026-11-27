@@ -578,6 +578,49 @@ describe("logging", () => {
     expect(h.logs[0]).toMatchObject({kind: "refresh", origin: "mediator", reason: "bypass", forwarded: false, status: 503});
   });
 
+  it.each([
+    [400, "invalid_grant", "Refresh token replayed", "refresh_token_replayed"],
+    [400, "invalid_grant", "Session expired", "session_expired"],
+    [400, "invalid_grant", "Refresh token expired", "refresh_token_expired"],
+    [401, "invalid_dpop_proof", "DPoP proof replayed", "dpop_proof_replayed"],
+    [401, "invalid_dpop_proof", 'Failed to verify DPoP proof: "iat" claim timestamp check failed', "dpop_proof_unverified"],
+    [401, "invalid_dpop_proof", 'DPoP "htu" mismatch', "dpop_proof_other"],
+    [401, "invalid_token", "Invalid DPoP key binding", "dpop_key_binding"],
+    [400, "invalid_grant", "no session for did:plc:alice", "other"],
+    [400, "invalid_grant", undefined, "none"],
+  ] as const)("sorts a relayed %i %s (%s) as %s, without logging the server's text", async (status, error, description, detail) => {
+    const h = harness({upstream: [() => json(status, {error, error_description: description})]});
+
+    await h.handle(refresh());
+
+    expect(h.logs[0]).toMatchObject({upstreamError: error, upstreamErrorDetail: detail});
+    if (description !== undefined) expect(JSON.stringify(h.logs)).not.toContain(description);
+  });
+
+  it("tells a proof the server had already seen from one it could not verify", async () => {
+    // Same error code, opposite meaning: "replayed" says the request reached
+    // the server twice and the first copy may have spent the refresh token.
+    const h = harness({
+      upstream: [
+        () => json(401, {error: "invalid_dpop_proof", error_description: "DPoP proof replayed"}),
+        () => json(401, {error: "invalid_dpop_proof", error_description: "Failed to verify DPoP proof"}),
+      ],
+    });
+
+    await h.handle(refresh());
+    await h.handle(refresh());
+
+    expect(h.logs.map((entry) => entry.upstreamErrorDetail)).toEqual(["dpop_proof_replayed", "dpop_proof_unverified"]);
+  });
+
+  it("gives a relayed success no error detail", async () => {
+    const h = harness({upstream: [() => json(200, {access_token: "at", refresh_token: "ref-next"})]});
+
+    await h.handle(refresh());
+
+    expect(h.logs[0]).not.toHaveProperty("upstreamErrorDetail");
+  });
+
   it("drops an upstream error value that does not look like an OAuth error code", async () => {
     const h = harness({upstream: [() => json(400, {error: "did:plc:alice said no"})]});
 
